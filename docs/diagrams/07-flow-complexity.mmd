@@ -1,0 +1,23 @@
+flowchart TD
+    A([Egitmen.exe: teslim edilen kod kuyruktan alındı]) --> B["gcc -std=c11 -O0 main.c -o prog<br/>(zaman aşımı: 10 sn)"]
+    B --> C{Derlendi mi?}
+    C -- Hayır --> C1[Derleyici çıktısını döndür<br/>puan = 0] --> Z([Bitti])
+    C -- Evet --> D[Gizliler dahil her test case için<br/>stdin ver, stdout karşılaştır<br/>süre limiti: 2 sn]
+    D --> E[geçen / toplam test]
+    E --> F["Girdi boyutları üret<br/>n = 1k, 2k, 4k, 8k, 16k, 32k"]
+    F --> G["Her n için programı 3 kez çalıştır<br/>medyan süre t(n) ve<br/>tepe bellek m(n) ölç"]
+    G --> H["log t(n) – log n doğrusal regresyon<br/>eğim k ≈ büyüme derecesi"]
+    H --> I{"Aday modellerle uyum<br/>1, log n, n, n log n, n², n³, 2ⁿ<br/>en yüksek R² olan"}
+    I --> J[Zaman karmaşıklığı]
+    G --> K["Aynı yöntem m(n) için"]
+    K --> L[Yer karmaşıklığı]
+    J --> M{Ölçülen ≤ eğitmenin<br/>beklediği mi?}
+    L --> M
+    M -- Evet --> N[karmaşıklık puanı = 1]
+    M -- Bir sınıf kötü --> O[karmaşıklık puanı = 0.5]
+    M -- Daha kötü --> P[karmaşıklık puanı = 0]
+    N --> Q
+    O --> Q
+    P --> Q
+    Q["Soru puanı = P × (w_test × geçen/toplam<br/>+ w_karm × karmaşıklık puanı)"]
+    Q --> R[Sonucu kaydet ve raporla] --> Z

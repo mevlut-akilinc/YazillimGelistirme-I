@@ -1,0 +1,49 @@
+flowchart LR
+    E(["👤 Eğitmen"])
+    O(["👤 Öğrenci"])
+    G(["⚙ GCC Derleyici"])
+
+    subgraph SYS["Lab Sınav Sistemi"]
+        direction TB
+        UC1(("Giriş yap"))
+        UC2(("Soru bankasını yönet"))
+        UC2a(("Soru ekle / düzenle / sil"))
+        UC2b(("Kategorilendir"))
+        UC2c(("Test senaryosu ve beklenen<br/>karmaşıklık tanımla"))
+        UC3(("Sınav / ödev oluştur"))
+        UC3a(("Süre ve puan ağırlığı belirle"))
+        UC4(("Sunucuyu başlat"))
+        UC5(("Sınavı LAN'a dağıt"))
+        UC6(("Canlı takip et"))
+        UC7(("Sonuçları ve sınıf<br/>raporunu görüntüle"))
+        UC8(("Log kayıtlarını görüntüle"))
+        UC9(("Sunucuya bağlan"))
+        UC10(("Sınavı çöz"))
+        UC11(("Kodu derle ve test et"))
+        UC12(("Cevapları gönder"))
+        UC13(("Otomatik puanla"))
+        UC14(("Zaman / yer karmaşıklığı ölç"))
+    end
+
+    E --- UC1
+    E --- UC2
+    E --- UC3
+    E --- UC4
+    E --- UC5
+    E --- UC6
+    E --- UC7
+    E --- UC8
+    O --- UC1
+    O --- UC9
+    O --- UC10
+    O --- UC12
+
+    UC2 -. "«include»" .-> UC2a
+    UC2 -. "«include»" .-> UC2b
+    UC2c -. "«extend»" .-> UC2a
+    UC3a -. "«include»" .-> UC3
+    UC5 -. "«include»" .-> UC4
+    UC11 -. "«extend»" .-> UC10
+    UC12 -. "«include»" .-> UC13
+    UC11 -. "«include»" .-> UC14
+    UC11 --- G

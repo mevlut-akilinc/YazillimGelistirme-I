@@ -1,0 +1,1025 @@
+<title>Lab Sınav Sistemi Diyagramları</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: tek sütun teknik doküman; üstte içindekiler, her diyagram kendi bölümünde */
+:root {
+  --bg:#F3F5F7; --surface:#FFFFFF; --ink:#16202B; --muted:#5B6877; --line:#DCE2E8; --accent:#0F766E; --accent-soft:#E2F1EF;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#11171E; --surface:#18212B; --ink:#E4E9EE; --muted:#97A3B0; --line:#2A3542; --accent:#3CC2B2; --accent-soft:#163331; color-scheme:dark } }
+:root[data-theme="dark"] { --bg:#11171E; --surface:#18212B; --ink:#E4E9EE; --muted:#97A3B0; --line:#2A3542; --accent:#3CC2B2; --accent-soft:#163331; color-scheme:dark }
+body { background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); padding-block:40px 64px }
+.wrap { max-width:1100px; margin:0 auto; display:grid; gap:28px }
+.top h1 { font-size:28px; font-weight:600; margin:0; text-wrap:balance }
+.top p { color:var(--muted); margin:6px 0 0; max-width:68ch }
+.eyebrow { font-family:var(--mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent) }
+nav { display:flex; flex-wrap:wrap; gap:8px }
+nav a { font-size:13px; color:var(--ink); text-decoration:none; border:1px solid var(--line); background:var(--surface); padding:6px 12px; border-radius:999px }
+nav a:hover, nav a:focus-visible { border-color:var(--accent); color:var(--accent); outline:none }
+.note { background:var(--accent-soft); border-radius:8px; padding:12px 16px; font-size:14px }
+section { background:var(--surface); border:1px solid var(--line); border-radius:10px; overflow:hidden; scroll-margin-top:16px }
+section header { display:flex; gap:16px; justify-content:space-between; align-items:flex-start; padding:18px 20px; border-bottom:1px solid var(--line); flex-wrap:wrap }
+section header > div { min-width:0; flex:1 1 320px }
+.file { font-family:var(--mono); font-size:12px; color:var(--muted) }
+h2 { font-size:18px; font-weight:600; margin:2px 0 4px }
+section p { margin:0; color:var(--muted); font-size:14px; max-width:70ch }
+.copy { font:500 13px var(--sans); color:var(--accent); background:transparent; border:1px solid var(--accent); border-radius:6px; padding:7px 12px; cursor:pointer; white-space:nowrap }
+.copy:hover { background:var(--accent-soft) }
+.copy:focus-visible { outline:2px solid var(--accent); outline-offset:2px }
+.canvas { overflow-x:auto; padding:20px; min-width:0 }
+.canvas pre { margin:0; font-family:var(--mono); font-size:12px }
+code { font-family:var(--mono); font-size:13px }
+</style>
+<div class="wrap">
+  <div class="top">
+    <div class="eyebrow">Yazılım Geliştirme I · 2026–27 Güz</div>
+    <h1>Lab Sınav Sistemi diyagramları</h1>
+    <p>Rapordaki UML, class ve akış diyagramları için taslaklar. Her bölümdeki kaynağı kopyalayıp <a href="https://mermaid.live" style="color:var(--accent)">mermaid.live</a> üzerinden PNG/SVG olarak dışa aktarabilir veya draw.io'ya aktarabilirsiniz.</p>
+  </div>
+  <nav aria-label="Diyagramlar"><a href="#d1">Use case diyagramı</a><a href="#d2">Class diyagramı</a><a href="#d3">Veritabanı (ER) diyagramı</a><a href="#d4">Sequence: öğrenci girişi</a><a href="#d5">Sequence: sınav dağıtımı ve cevap toplama</a><a href="#d6">Akış diyagramı: öğrenci sınav süreci</a><a href="#d7">Akış diyagramı: sunucuda puanlama ve karmaşıklık</a><a href="#d8">Dağıtım diyagramı</a></nav>
+  <div class="note">Mimari: iki exe (Egitmen.exe sunucu, Ogrenci.exe istemci) + ortak kütüphane; kod öğrencide derlenip test edilir, puanlama ve karmaşıklık sunucuda yapılır.<br>Vize kapsamı: use case, class, ER, iki sequence ve öğrenci akışı. Final kapsamı: kod değerlendirme/karmaşıklık akışı ve class diyagramındaki <code>ICodeEvaluator</code>.</div>
+  <section id="d1">
+<header><div><span class="file">01-use-case.mmd</span><h2>Use case diyagramı</h2><p>Aktörler (Eğitmen, Öğrenci, GCC) ve sistemin sunduğu işlevler. Kodlama, karmaşıklık ve derleme final kapsamı.</p></div>
+<button type="button" class="copy" data-src="s1">Kaynağı kopyala</button></header>
+<div class="canvas"><pre class="mermaid">flowchart LR
+    E([&quot;👤 Eğitmen&quot;])
+    O([&quot;👤 Öğrenci&quot;])
+    G([&quot;⚙ GCC Derleyici&quot;])
+
+    subgraph SYS[&quot;Lab Sınav Sistemi&quot;]
+        direction TB
+        UC1((&quot;Giriş yap&quot;))
+        UC2((&quot;Soru bankasını yönet&quot;))
+        UC2a((&quot;Soru ekle / düzenle / sil&quot;))
+        UC2b((&quot;Kategorilendir&quot;))
+        UC2c((&quot;Test senaryosu ve beklenen&lt;br/&gt;karmaşıklık tanımla&quot;))
+        UC3((&quot;Sınav / ödev oluştur&quot;))
+        UC3a((&quot;Süre ve puan ağırlığı belirle&quot;))
+        UC4((&quot;Sunucuyu başlat&quot;))
+        UC5((&quot;Sınavı LAN&#x27;a dağıt&quot;))
+        UC6((&quot;Canlı takip et&quot;))
+        UC7((&quot;Sonuçları ve sınıf&lt;br/&gt;raporunu görüntüle&quot;))
+        UC8((&quot;Log kayıtlarını görüntüle&quot;))
+        UC9((&quot;Sunucuya bağlan&quot;))
+        UC10((&quot;Sınavı çöz&quot;))
+        UC11((&quot;Kodu derle ve test et&quot;))
+        UC12((&quot;Cevapları gönder&quot;))
+        UC13((&quot;Otomatik puanla&quot;))
+        UC14((&quot;Zaman / yer karmaşıklığı ölç&quot;))
+    end
+
+    E --- UC1
+    E --- UC2
+    E --- UC3
+    E --- UC4
+    E --- UC5
+    E --- UC6
+    E --- UC7
+    E --- UC8
+    O --- UC1
+    O --- UC9
+    O --- UC10
+    O --- UC12
+
+    UC2 -. &quot;«include»&quot; .-&gt; UC2a
+    UC2 -. &quot;«include»&quot; .-&gt; UC2b
+    UC2c -. &quot;«extend»&quot; .-&gt; UC2a
+    UC3a -. &quot;«include»&quot; .-&gt; UC3
+    UC5 -. &quot;«include»&quot; .-&gt; UC4
+    UC11 -. &quot;«extend»&quot; .-&gt; UC10
+    UC12 -. &quot;«include»&quot; .-&gt; UC13
+    UC11 -. &quot;«include»&quot; .-&gt; UC14
+    UC11 --- G
+</pre></div>
+<textarea id="s1" hidden readonly>flowchart LR
+    E([&quot;👤 Eğitmen&quot;])
+    O([&quot;👤 Öğrenci&quot;])
+    G([&quot;⚙ GCC Derleyici&quot;])
+
+    subgraph SYS[&quot;Lab Sınav Sistemi&quot;]
+        direction TB
+        UC1((&quot;Giriş yap&quot;))
+        UC2((&quot;Soru bankasını yönet&quot;))
+        UC2a((&quot;Soru ekle / düzenle / sil&quot;))
+        UC2b((&quot;Kategorilendir&quot;))
+        UC2c((&quot;Test senaryosu ve beklenen&lt;br/&gt;karmaşıklık tanımla&quot;))
+        UC3((&quot;Sınav / ödev oluştur&quot;))
+        UC3a((&quot;Süre ve puan ağırlığı belirle&quot;))
+        UC4((&quot;Sunucuyu başlat&quot;))
+        UC5((&quot;Sınavı LAN&#x27;a dağıt&quot;))
+        UC6((&quot;Canlı takip et&quot;))
+        UC7((&quot;Sonuçları ve sınıf&lt;br/&gt;raporunu görüntüle&quot;))
+        UC8((&quot;Log kayıtlarını görüntüle&quot;))
+        UC9((&quot;Sunucuya bağlan&quot;))
+        UC10((&quot;Sınavı çöz&quot;))
+        UC11((&quot;Kodu derle ve test et&quot;))
+        UC12((&quot;Cevapları gönder&quot;))
+        UC13((&quot;Otomatik puanla&quot;))
+        UC14((&quot;Zaman / yer karmaşıklığı ölç&quot;))
+    end
+
+    E --- UC1
+    E --- UC2
+    E --- UC3
+    E --- UC4
+    E --- UC5
+    E --- UC6
+    E --- UC7
+    E --- UC8
+    O --- UC1
+    O --- UC9
+    O --- UC10
+    O --- UC12
+
+    UC2 -. &quot;«include»&quot; .-&gt; UC2a
+    UC2 -. &quot;«include»&quot; .-&gt; UC2b
+    UC2c -. &quot;«extend»&quot; .-&gt; UC2a
+    UC3a -. &quot;«include»&quot; .-&gt; UC3
+    UC5 -. &quot;«include»&quot; .-&gt; UC4
+    UC11 -. &quot;«extend»&quot; .-&gt; UC10
+    UC12 -. &quot;«include»&quot; .-&gt; UC13
+    UC11 -. &quot;«include»&quot; .-&gt; UC14
+    UC11 --- G
+</textarea>
+</section>
+<section id="d2">
+<header><div><span class="file">02-class.mmd</span><h2>Class diyagramı</h2><p>Üç proje: ortak kütüphane, Egitmen.exe ve Ogrenci.exe. Öğrenci exe&#x27;si veritabanı ve sunucu sınıflarını içermez.</p></div>
+<button type="button" class="copy" data-src="s2">Kaynağı kopyala</button></header>
+<div class="canvas"><pre class="mermaid">classDiagram
+    direction LR
+
+    namespace SinavSistemi_Shared {
+        class User {
+            +int Id
+            +string Username
+            +string FullName
+            +UserRole Role
+            +string StudentNumber
+            +string ClassName
+        }
+        class Session {
+            +User User
+            +string Token
+        }
+        class Question {
+            +int Id
+            +QuestionType Type
+            +string Category
+            +string Text
+            +int DefaultPoints
+            +string ExpectedAnswer
+            +Complexity ExpectedTimeComplexity
+            +Complexity ExpectedSpaceComplexity
+        }
+        class QuestionOption {
+            +string Label
+            +string Text
+            +bool IsCorrect
+        }
+        class TestCase {
+            +string Input
+            +string ExpectedOutput
+            +bool IsHidden
+        }
+        class Exam {
+            +int Id
+            +string Title
+            +int DurationMinutes
+            +DateTime StartedAt
+            +double TestCaseWeight
+            +double ComplexityWeight
+            +EndsAt() DateTime
+        }
+        class ExamQuestion {
+            +int Order
+            +int Points
+        }
+        class StudentAnswer {
+            +int QuestionId
+            +int SelectedOptionId
+            +string Text
+            +string Code
+        }
+        class Protocol {
+            &lt;&lt;static&gt;&gt;
+            +Serialize(type, payload, token) string
+            +Parse(line) Envelope
+            +StripForStudent(Exam) Exam
+        }
+        class MessageStream {
+            +SendAsync(type, payload, token)
+            +ReadAsync() Envelope
+        }
+        class GccRunner {
+            +string GccPath
+            +CompileAndTestAsync(code, tests) CodeRunResult
+        }
+    }
+
+    namespace Egitmen_exe {
+        class IAuthService {
+            &lt;&lt;interface&gt;&gt;
+            +LoginAsync(username, password) Session
+        }
+        class IQuestionService {
+            &lt;&lt;interface&gt;&gt;
+            +GetAllAsync() List~Question~
+            +AddAsync(Question)
+            +UpdateAsync(Question)
+            +DeleteAsync(id)
+        }
+        class IExamService {
+            &lt;&lt;interface&gt;&gt;
+            +SaveAsync(Exam) Exam
+            +GetResultsAsync(examId) List~ResultRow~
+            +GetLogsAsync() List~LogEntry~
+        }
+        class IExamServer {
+            &lt;&lt;interface&gt;&gt;
+            +StartAsync(port)
+            +BroadcastExamAsync(Exam)
+            +EndExamAsync(examId)
+        }
+        class ComplexityAnalyzer {
+            +Measure(binary, sizes) Complexity[2]
+        }
+        class InstructorShellViewModel
+    }
+
+    namespace Ogrenci_exe {
+        class IExamClient {
+            &lt;&lt;interface&gt;&gt;
+            +LoginAsync(ip, port, no, password) LoginResult
+            +SubmitAsync(examId, answers) SubmitResult
+            +SendProgressAsync(examId, count)
+        }
+        class ExamSessionViewModel
+        class AnswerViewModel
+    }
+
+    Session --&gt; User
+    Question &quot;1&quot; *-- &quot;0..*&quot; QuestionOption
+    Question &quot;1&quot; *-- &quot;0..*&quot; TestCase
+    Exam &quot;1&quot; *-- &quot;1..*&quot; ExamQuestion
+    ExamQuestion &quot;0..*&quot; --&gt; &quot;1&quot; Question
+
+    InstructorShellViewModel ..&gt; IQuestionService
+    InstructorShellViewModel ..&gt; IExamService
+    InstructorShellViewModel ..&gt; IExamServer
+    IExamServer ..&gt; IAuthService : öğrenci LOGIN
+    IExamServer ..&gt; MessageStream
+    IExamServer ..&gt; Protocol : StripForStudent
+    IExamServer ..&gt; GccRunner : teslim sonrası puanlama
+    IExamServer ..&gt; ComplexityAnalyzer : final
+
+    ExamSessionViewModel &quot;1&quot; *-- &quot;1..*&quot; AnswerViewModel
+    ExamSessionViewModel ..&gt; IExamClient
+    AnswerViewModel ..&gt; GccRunner : Derle ve test et
+    IExamClient ..&gt; MessageStream
+    AnswerViewModel ..&gt; StudentAnswer
+</pre></div>
+<textarea id="s2" hidden readonly>classDiagram
+    direction LR
+
+    namespace SinavSistemi_Shared {
+        class User {
+            +int Id
+            +string Username
+            +string FullName
+            +UserRole Role
+            +string StudentNumber
+            +string ClassName
+        }
+        class Session {
+            +User User
+            +string Token
+        }
+        class Question {
+            +int Id
+            +QuestionType Type
+            +string Category
+            +string Text
+            +int DefaultPoints
+            +string ExpectedAnswer
+            +Complexity ExpectedTimeComplexity
+            +Complexity ExpectedSpaceComplexity
+        }
+        class QuestionOption {
+            +string Label
+            +string Text
+            +bool IsCorrect
+        }
+        class TestCase {
+            +string Input
+            +string ExpectedOutput
+            +bool IsHidden
+        }
+        class Exam {
+            +int Id
+            +string Title
+            +int DurationMinutes
+            +DateTime StartedAt
+            +double TestCaseWeight
+            +double ComplexityWeight
+            +EndsAt() DateTime
+        }
+        class ExamQuestion {
+            +int Order
+            +int Points
+        }
+        class StudentAnswer {
+            +int QuestionId
+            +int SelectedOptionId
+            +string Text
+            +string Code
+        }
+        class Protocol {
+            &lt;&lt;static&gt;&gt;
+            +Serialize(type, payload, token) string
+            +Parse(line) Envelope
+            +StripForStudent(Exam) Exam
+        }
+        class MessageStream {
+            +SendAsync(type, payload, token)
+            +ReadAsync() Envelope
+        }
+        class GccRunner {
+            +string GccPath
+            +CompileAndTestAsync(code, tests) CodeRunResult
+        }
+    }
+
+    namespace Egitmen_exe {
+        class IAuthService {
+            &lt;&lt;interface&gt;&gt;
+            +LoginAsync(username, password) Session
+        }
+        class IQuestionService {
+            &lt;&lt;interface&gt;&gt;
+            +GetAllAsync() List~Question~
+            +AddAsync(Question)
+            +UpdateAsync(Question)
+            +DeleteAsync(id)
+        }
+        class IExamService {
+            &lt;&lt;interface&gt;&gt;
+            +SaveAsync(Exam) Exam
+            +GetResultsAsync(examId) List~ResultRow~
+            +GetLogsAsync() List~LogEntry~
+        }
+        class IExamServer {
+            &lt;&lt;interface&gt;&gt;
+            +StartAsync(port)
+            +BroadcastExamAsync(Exam)
+            +EndExamAsync(examId)
+        }
+        class ComplexityAnalyzer {
+            +Measure(binary, sizes) Complexity[2]
+        }
+        class InstructorShellViewModel
+    }
+
+    namespace Ogrenci_exe {
+        class IExamClient {
+            &lt;&lt;interface&gt;&gt;
+            +LoginAsync(ip, port, no, password) LoginResult
+            +SubmitAsync(examId, answers) SubmitResult
+            +SendProgressAsync(examId, count)
+        }
+        class ExamSessionViewModel
+        class AnswerViewModel
+    }
+
+    Session --&gt; User
+    Question &quot;1&quot; *-- &quot;0..*&quot; QuestionOption
+    Question &quot;1&quot; *-- &quot;0..*&quot; TestCase
+    Exam &quot;1&quot; *-- &quot;1..*&quot; ExamQuestion
+    ExamQuestion &quot;0..*&quot; --&gt; &quot;1&quot; Question
+
+    InstructorShellViewModel ..&gt; IQuestionService
+    InstructorShellViewModel ..&gt; IExamService
+    InstructorShellViewModel ..&gt; IExamServer
+    IExamServer ..&gt; IAuthService : öğrenci LOGIN
+    IExamServer ..&gt; MessageStream
+    IExamServer ..&gt; Protocol : StripForStudent
+    IExamServer ..&gt; GccRunner : teslim sonrası puanlama
+    IExamServer ..&gt; ComplexityAnalyzer : final
+
+    ExamSessionViewModel &quot;1&quot; *-- &quot;1..*&quot; AnswerViewModel
+    ExamSessionViewModel ..&gt; IExamClient
+    AnswerViewModel ..&gt; GccRunner : Derle ve test et
+    IExamClient ..&gt; MessageStream
+    AnswerViewModel ..&gt; StudentAnswer
+</textarea>
+</section>
+<section id="d3">
+<header><div><span class="file">03-er.mmd</span><h2>Veritabanı (ER) diyagramı</h2><p>PostgreSQL tablo önerisi. Model sınıflarıyla birebir uyumlu; ekip arkadaşınızın şemasıyla karşılaştırın.</p></div>
+<button type="button" class="copy" data-src="s3">Kaynağı kopyala</button></header>
+<div class="canvas"><pre class="mermaid">erDiagram
+    USERS {
+        int id PK
+        varchar username UK
+        varchar password_hash
+        varchar full_name
+        varchar role &quot;EGITMEN | OGRENCI&quot;
+        varchar student_number UK
+        varchar class_name
+        timestamp created_at
+    }
+    CATEGORIES {
+        int id PK
+        varchar name UK
+    }
+    QUESTIONS {
+        int id PK
+        int category_id FK
+        varchar type &quot;COKTAN_SECMELI | KLASIK | KODLAMA&quot;
+        text body
+        int default_points
+        text expected_answer
+        varchar expected_time_complexity
+        varchar expected_space_complexity
+        text starter_code
+        int created_by FK
+        timestamp created_at
+    }
+    QUESTION_OPTIONS {
+        int id PK
+        int question_id FK
+        char label
+        text body
+        boolean is_correct
+    }
+    TEST_CASES {
+        int id PK
+        int question_id FK
+        text input
+        text expected_output
+        boolean is_hidden
+    }
+    EXAMS {
+        int id PK
+        varchar title
+        varchar class_name
+        int duration_minutes
+        varchar status &quot;TASLAK | YAYINDA | BITTI&quot;
+        numeric test_case_weight
+        numeric complexity_weight
+        timestamp started_at
+        int created_by FK
+    }
+    EXAM_QUESTIONS {
+        int exam_id PK, FK
+        int question_id PK, FK
+        int order_no
+        int points
+    }
+    SUBMISSIONS {
+        int id PK
+        int exam_id FK
+        int student_id FK
+        timestamp submitted_at
+        varchar client_ip
+        numeric total_score
+        int correct_count
+    }
+    ANSWERS {
+        int id PK
+        int submission_id FK
+        int question_id FK
+        int selected_option_id FK
+        text answer_text
+        text code
+        boolean is_correct
+        numeric score
+    }
+    CODE_RESULTS {
+        int answer_id PK, FK
+        boolean compiled
+        text compiler_output
+        int passed_tests
+        int total_tests
+        varchar measured_time
+        varchar measured_space
+    }
+    LOGS {
+        bigint id PK
+        int exam_id FK
+        timestamp created_at
+        varchar level
+        varchar source
+        text message
+    }
+
+    CATEGORIES ||--o{ QUESTIONS : &quot;içerir&quot;
+    USERS ||--o{ QUESTIONS : &quot;oluşturur&quot;
+    QUESTIONS ||--o{ QUESTION_OPTIONS : &quot;şıkları&quot;
+    QUESTIONS ||--o{ TEST_CASES : &quot;testleri&quot;
+    USERS ||--o{ EXAMS : &quot;hazırlar&quot;
+    EXAMS ||--|{ EXAM_QUESTIONS : &quot;içerir&quot;
+    QUESTIONS ||--o{ EXAM_QUESTIONS : &quot;kullanılır&quot;
+    EXAMS ||--o{ SUBMISSIONS : &quot;alır&quot;
+    USERS ||--o{ SUBMISSIONS : &quot;gönderir&quot;
+    SUBMISSIONS ||--|{ ANSWERS : &quot;içerir&quot;
+    QUESTIONS ||--o{ ANSWERS : &quot;cevaplanır&quot;
+    ANSWERS ||--o| CODE_RESULTS : &quot;kod sonucu&quot;
+    EXAMS ||--o{ LOGS : &quot;kayıt&quot;
+</pre></div>
+<textarea id="s3" hidden readonly>erDiagram
+    USERS {
+        int id PK
+        varchar username UK
+        varchar password_hash
+        varchar full_name
+        varchar role &quot;EGITMEN | OGRENCI&quot;
+        varchar student_number UK
+        varchar class_name
+        timestamp created_at
+    }
+    CATEGORIES {
+        int id PK
+        varchar name UK
+    }
+    QUESTIONS {
+        int id PK
+        int category_id FK
+        varchar type &quot;COKTAN_SECMELI | KLASIK | KODLAMA&quot;
+        text body
+        int default_points
+        text expected_answer
+        varchar expected_time_complexity
+        varchar expected_space_complexity
+        text starter_code
+        int created_by FK
+        timestamp created_at
+    }
+    QUESTION_OPTIONS {
+        int id PK
+        int question_id FK
+        char label
+        text body
+        boolean is_correct
+    }
+    TEST_CASES {
+        int id PK
+        int question_id FK
+        text input
+        text expected_output
+        boolean is_hidden
+    }
+    EXAMS {
+        int id PK
+        varchar title
+        varchar class_name
+        int duration_minutes
+        varchar status &quot;TASLAK | YAYINDA | BITTI&quot;
+        numeric test_case_weight
+        numeric complexity_weight
+        timestamp started_at
+        int created_by FK
+    }
+    EXAM_QUESTIONS {
+        int exam_id PK, FK
+        int question_id PK, FK
+        int order_no
+        int points
+    }
+    SUBMISSIONS {
+        int id PK
+        int exam_id FK
+        int student_id FK
+        timestamp submitted_at
+        varchar client_ip
+        numeric total_score
+        int correct_count
+    }
+    ANSWERS {
+        int id PK
+        int submission_id FK
+        int question_id FK
+        int selected_option_id FK
+        text answer_text
+        text code
+        boolean is_correct
+        numeric score
+    }
+    CODE_RESULTS {
+        int answer_id PK, FK
+        boolean compiled
+        text compiler_output
+        int passed_tests
+        int total_tests
+        varchar measured_time
+        varchar measured_space
+    }
+    LOGS {
+        bigint id PK
+        int exam_id FK
+        timestamp created_at
+        varchar level
+        varchar source
+        text message
+    }
+
+    CATEGORIES ||--o{ QUESTIONS : &quot;içerir&quot;
+    USERS ||--o{ QUESTIONS : &quot;oluşturur&quot;
+    QUESTIONS ||--o{ QUESTION_OPTIONS : &quot;şıkları&quot;
+    QUESTIONS ||--o{ TEST_CASES : &quot;testleri&quot;
+    USERS ||--o{ EXAMS : &quot;hazırlar&quot;
+    EXAMS ||--|{ EXAM_QUESTIONS : &quot;içerir&quot;
+    QUESTIONS ||--o{ EXAM_QUESTIONS : &quot;kullanılır&quot;
+    EXAMS ||--o{ SUBMISSIONS : &quot;alır&quot;
+    USERS ||--o{ SUBMISSIONS : &quot;gönderir&quot;
+    SUBMISSIONS ||--|{ ANSWERS : &quot;içerir&quot;
+    QUESTIONS ||--o{ ANSWERS : &quot;cevaplanır&quot;
+    ANSWERS ||--o| CODE_RESULTS : &quot;kod sonucu&quot;
+    EXAMS ||--o{ LOGS : &quot;kayıt&quot;
+</textarea>
+</section>
+<section id="d4">
+<header><div><span class="file">04-sequence-login.mmd</span><h2>Sequence: öğrenci girişi</h2><p>Ogrenci.exe veritabanını bilmez; numara ve şifre Egitmen.exe&#x27;deki sunucuda doğrulanır.</p></div>
+<button type="button" class="copy" data-src="s4">Kaynağı kopyala</button></header>
+<div class="canvas"><pre class="mermaid">sequenceDiagram
+    autonumber
+    actor O as Öğrenci
+    participant UI as Ogrenci.exe · LoginWindow
+    participant VM as LoginViewModel
+    participant C as Ogrenci.exe · ExamClient
+    participant S as Egitmen.exe · ExamServer
+    participant A as Egitmen.exe · Şifre kontrolü
+    participant DB as PostgreSQL (localhost)
+
+    O-&gt;&gt;UI: Rol=Öğrenci, numara, şifre, sunucu IP
+    UI-&gt;&gt;VM: LoginCommand
+    VM-&gt;&gt;VM: Alanları doğrula (boş mu, IP geçerli mi)
+    VM-&gt;&gt;C: ConnectAsync(ip, 5050)
+    C-&gt;&gt;S: TCP bağlantısı
+    S--&gt;&gt;C: Bağlantı kabul
+    C-&gt;&gt;S: LOGIN {numara, şifre, rol}
+    S-&gt;&gt;S: Bu numara başka PC&#x27;de açık mı?
+    S-&gt;&gt;A: Doğrula(numara, şifre)
+    A-&gt;&gt;DB: SELECT password_hash, role FROM users WHERE username=?
+    DB--&gt;&gt;A: kayıt
+    A-&gt;&gt;A: Şifre hash karşılaştır (BCrypt)
+    alt Bilgiler doğru
+        A--&gt;&gt;S: Session(token)
+        S-&gt;&gt;DB: INSERT INTO logs (bağlandı)
+        S--&gt;&gt;C: LOGIN_OK {token, ad soyad}
+        C--&gt;&gt;VM: Session
+        VM--&gt;&gt;UI: LoginSucceeded
+        UI-&gt;&gt;UI: StudentWindow aç (bekleme ekranı)
+    else Hatalı
+        A--&gt;&gt;S: null
+        S--&gt;&gt;C: LOGIN_FAIL
+        C--&gt;&gt;VM: null
+        VM--&gt;&gt;UI: &quot;Kullanıcı adı veya şifre hatalı&quot;
+    end
+</pre></div>
+<textarea id="s4" hidden readonly>sequenceDiagram
+    autonumber
+    actor O as Öğrenci
+    participant UI as Ogrenci.exe · LoginWindow
+    participant VM as LoginViewModel
+    participant C as Ogrenci.exe · ExamClient
+    participant S as Egitmen.exe · ExamServer
+    participant A as Egitmen.exe · Şifre kontrolü
+    participant DB as PostgreSQL (localhost)
+
+    O-&gt;&gt;UI: Rol=Öğrenci, numara, şifre, sunucu IP
+    UI-&gt;&gt;VM: LoginCommand
+    VM-&gt;&gt;VM: Alanları doğrula (boş mu, IP geçerli mi)
+    VM-&gt;&gt;C: ConnectAsync(ip, 5050)
+    C-&gt;&gt;S: TCP bağlantısı
+    S--&gt;&gt;C: Bağlantı kabul
+    C-&gt;&gt;S: LOGIN {numara, şifre, rol}
+    S-&gt;&gt;S: Bu numara başka PC&#x27;de açık mı?
+    S-&gt;&gt;A: Doğrula(numara, şifre)
+    A-&gt;&gt;DB: SELECT password_hash, role FROM users WHERE username=?
+    DB--&gt;&gt;A: kayıt
+    A-&gt;&gt;A: Şifre hash karşılaştır (BCrypt)
+    alt Bilgiler doğru
+        A--&gt;&gt;S: Session(token)
+        S-&gt;&gt;DB: INSERT INTO logs (bağlandı)
+        S--&gt;&gt;C: LOGIN_OK {token, ad soyad}
+        C--&gt;&gt;VM: Session
+        VM--&gt;&gt;UI: LoginSucceeded
+        UI-&gt;&gt;UI: StudentWindow aç (bekleme ekranı)
+    else Hatalı
+        A--&gt;&gt;S: null
+        S--&gt;&gt;C: LOGIN_FAIL
+        C--&gt;&gt;VM: null
+        VM--&gt;&gt;UI: &quot;Kullanıcı adı veya şifre hatalı&quot;
+    end
+</textarea>
+</section>
+<section id="d5">
+<header><div><span class="file">05-sequence-exam.mmd</span><h2>Sequence: sınav dağıtımı ve cevap toplama</h2><p>Cevapsız sınav gönderimi, öğrencide yerel derleme, sunucuda süre kontrolü, puanlama ve log.</p></div>
+<button type="button" class="copy" data-src="s5">Kaynağı kopyala</button></header>
+<div class="canvas"><pre class="mermaid">sequenceDiagram
+    autonumber
+    actor E as Eğitmen
+    participant EU as Egitmen.exe · Arayüz
+    participant S as Egitmen.exe · ExamServer
+    participant DB as PostgreSQL
+    participant C as Ogrenci.exe (n adet)
+    actor O as Öğrenci
+
+    E-&gt;&gt;EU: Sunucuyu başlat
+    EU-&gt;&gt;S: StartAsync(5050)
+    S-&gt;&gt;DB: INSERT log &quot;sunucu açıldı&quot;
+    C-&gt;&gt;S: Bağlan + LOGIN
+    S--&gt;&gt;EU: StudentConnected (canlı liste)
+    E-&gt;&gt;EU: Sınavı seç → Dağıt
+    EU-&gt;&gt;S: BroadcastExamAsync(exam)
+    S-&gt;&gt;DB: UPDATE exams SET status=&#x27;YAYINDA&#x27;, started_at=now()
+    par Tüm bağlı öğrencilere eş zamanlı
+        S-&gt;&gt;C: EXAM {StripForStudent: cevap anahtarı ve gizli testler hariç}
+    end
+    C--&gt;&gt;O: Sınav ekranı + geri sayım
+    loop Sınav süresince
+        O-&gt;&gt;C: Cevap seç / yaz
+        opt Kodlama sorusu
+            C-&gt;&gt;C: gcc ile derle, görünür testleri çalıştır
+            C--&gt;&gt;O: Hata veya geçen test sayısı
+        end
+        C-&gt;&gt;S: PROGRESS {cevaplanan sayısı}
+        S--&gt;&gt;EU: StudentChanged
+    end
+    O-&gt;&gt;C: Sınavı bitir ve gönder
+    C-&gt;&gt;S: SUBMIT {examId, cevaplar}
+    S-&gt;&gt;S: now() &lt;= bitiş zamanı mı?
+    alt Süre içinde
+        S-&gt;&gt;S: Cevap anahtarı ile puanla (ÇS, klasik)
+        S-&gt;&gt;S: Kodlama: gcc ile TÜM testler + karmaşıklık ölçümü (kuyrukta)
+        S-&gt;&gt;DB: INSERT submissions, answers
+        S-&gt;&gt;DB: INSERT log &quot;teslim etti&quot; (tarih-saat, IP)
+        S--&gt;&gt;C: SUBMIT_OK
+        C--&gt;&gt;O: &quot;Sınav teslim edildi&quot;
+    else Süre doldu
+        S-&gt;&gt;DB: INSERT log &quot;geç gönderim reddedildi&quot;
+        S--&gt;&gt;C: SUBMIT_REJECTED
+    end
+    E-&gt;&gt;EU: Sonuçlar
+    EU-&gt;&gt;DB: Öğrenci bazlı puanlar + sınıf ortalaması
+</pre></div>
+<textarea id="s5" hidden readonly>sequenceDiagram
+    autonumber
+    actor E as Eğitmen
+    participant EU as Egitmen.exe · Arayüz
+    participant S as Egitmen.exe · ExamServer
+    participant DB as PostgreSQL
+    participant C as Ogrenci.exe (n adet)
+    actor O as Öğrenci
+
+    E-&gt;&gt;EU: Sunucuyu başlat
+    EU-&gt;&gt;S: StartAsync(5050)
+    S-&gt;&gt;DB: INSERT log &quot;sunucu açıldı&quot;
+    C-&gt;&gt;S: Bağlan + LOGIN
+    S--&gt;&gt;EU: StudentConnected (canlı liste)
+    E-&gt;&gt;EU: Sınavı seç → Dağıt
+    EU-&gt;&gt;S: BroadcastExamAsync(exam)
+    S-&gt;&gt;DB: UPDATE exams SET status=&#x27;YAYINDA&#x27;, started_at=now()
+    par Tüm bağlı öğrencilere eş zamanlı
+        S-&gt;&gt;C: EXAM {StripForStudent: cevap anahtarı ve gizli testler hariç}
+    end
+    C--&gt;&gt;O: Sınav ekranı + geri sayım
+    loop Sınav süresince
+        O-&gt;&gt;C: Cevap seç / yaz
+        opt Kodlama sorusu
+            C-&gt;&gt;C: gcc ile derle, görünür testleri çalıştır
+            C--&gt;&gt;O: Hata veya geçen test sayısı
+        end
+        C-&gt;&gt;S: PROGRESS {cevaplanan sayısı}
+        S--&gt;&gt;EU: StudentChanged
+    end
+    O-&gt;&gt;C: Sınavı bitir ve gönder
+    C-&gt;&gt;S: SUBMIT {examId, cevaplar}
+    S-&gt;&gt;S: now() &lt;= bitiş zamanı mı?
+    alt Süre içinde
+        S-&gt;&gt;S: Cevap anahtarı ile puanla (ÇS, klasik)
+        S-&gt;&gt;S: Kodlama: gcc ile TÜM testler + karmaşıklık ölçümü (kuyrukta)
+        S-&gt;&gt;DB: INSERT submissions, answers
+        S-&gt;&gt;DB: INSERT log &quot;teslim etti&quot; (tarih-saat, IP)
+        S--&gt;&gt;C: SUBMIT_OK
+        C--&gt;&gt;O: &quot;Sınav teslim edildi&quot;
+    else Süre doldu
+        S-&gt;&gt;DB: INSERT log &quot;geç gönderim reddedildi&quot;
+        S--&gt;&gt;C: SUBMIT_REJECTED
+    end
+    E-&gt;&gt;EU: Sonuçlar
+    EU-&gt;&gt;DB: Öğrenci bazlı puanlar + sınıf ortalaması
+</textarea>
+</section>
+<section id="d6">
+<header><div><span class="file">06-activity-student.mmd</span><h2>Akış diyagramı: öğrenci sınav süreci</h2><p>Girişten teslime kadar Ogrenci.exe&#x27;deki akış; kod öğrencinin bilgisayarında derlenir.</p></div>
+<button type="button" class="copy" data-src="s6">Kaynağı kopyala</button></header>
+<div class="canvas"><pre class="mermaid">flowchart TD
+    A([Başla]) --&gt; B[Uygulamayı aç]
+    B --&gt; C[Rol: Öğrenci seç&lt;br/&gt;numara, şifre, sunucu IP gir]
+    C --&gt; D{IP geçerli ve&lt;br/&gt;sunucuya ulaşıldı mı?}
+    D -- Hayır --&gt; D1[Bağlantı hatası göster] --&gt; C
+    D -- Evet --&gt; E{Kimlik doğru mu?}
+    E -- Hayır --&gt; E1[Hatalı giriş uyarısı] --&gt; C
+    E -- Evet --&gt; F[Bekleme ekranı]
+    F --&gt; G{Sınav geldi mi?}
+    G -- Hayır --&gt; F
+    G -- Evet --&gt; H[Sınav ekranı açılır&lt;br/&gt;geri sayım başlar]
+    H --&gt; I[Soruyu görüntüle]
+    I --&gt; J{Soru türü}
+    J -- Çoktan seçmeli --&gt; K1[Şık seç]
+    J -- Klasik --&gt; K2[Cevap yaz]
+    J -- Kodlama --&gt; K3[Kod yaz → Derle ve test et&lt;br/&gt;bu bilgisayardaki gcc ile]
+    K3 --&gt; K4{Derleme hatası?}
+    K4 -- Evet --&gt; K5[Hata mesajını göster] --&gt; K3
+    K4 -- Hayır --&gt; K6[Görünür testlerden&lt;br/&gt;geçen sayısını göster]
+    K1 --&gt; L
+    K2 --&gt; L
+    K6 --&gt; L
+    L{Süre doldu mu?}
+    L -- Evet --&gt; N[Cevapları otomatik gönder]
+    L -- Hayır --&gt; M{Öğrenci &#x27;Bitir&#x27;e bastı mı?}
+    M -- Hayır --&gt; I
+    M -- Evet --&gt; M1{Boş soru var mı?}
+    M1 -- Evet --&gt; M2{Yine de gönderilsin mi?}
+    M2 -- Hayır --&gt; I
+    M2 -- Evet --&gt; N
+    M1 -- Hayır --&gt; N
+    N --&gt; P{Sunucu kabul etti mi?}
+    P -- Hayır, ağ hatası --&gt; P1[Tekrar dene uyarısı] --&gt; N
+    P -- Evet --&gt; Q[Teslim edildi ekranı]
+    Q --&gt; R([Bitir])
+</pre></div>
+<textarea id="s6" hidden readonly>flowchart TD
+    A([Başla]) --&gt; B[Uygulamayı aç]
+    B --&gt; C[Rol: Öğrenci seç&lt;br/&gt;numara, şifre, sunucu IP gir]
+    C --&gt; D{IP geçerli ve&lt;br/&gt;sunucuya ulaşıldı mı?}
+    D -- Hayır --&gt; D1[Bağlantı hatası göster] --&gt; C
+    D -- Evet --&gt; E{Kimlik doğru mu?}
+    E -- Hayır --&gt; E1[Hatalı giriş uyarısı] --&gt; C
+    E -- Evet --&gt; F[Bekleme ekranı]
+    F --&gt; G{Sınav geldi mi?}
+    G -- Hayır --&gt; F
+    G -- Evet --&gt; H[Sınav ekranı açılır&lt;br/&gt;geri sayım başlar]
+    H --&gt; I[Soruyu görüntüle]
+    I --&gt; J{Soru türü}
+    J -- Çoktan seçmeli --&gt; K1[Şık seç]
+    J -- Klasik --&gt; K2[Cevap yaz]
+    J -- Kodlama --&gt; K3[Kod yaz → Derle ve test et&lt;br/&gt;bu bilgisayardaki gcc ile]
+    K3 --&gt; K4{Derleme hatası?}
+    K4 -- Evet --&gt; K5[Hata mesajını göster] --&gt; K3
+    K4 -- Hayır --&gt; K6[Görünür testlerden&lt;br/&gt;geçen sayısını göster]
+    K1 --&gt; L
+    K2 --&gt; L
+    K6 --&gt; L
+    L{Süre doldu mu?}
+    L -- Evet --&gt; N[Cevapları otomatik gönder]
+    L -- Hayır --&gt; M{Öğrenci &#x27;Bitir&#x27;e bastı mı?}
+    M -- Hayır --&gt; I
+    M -- Evet --&gt; M1{Boş soru var mı?}
+    M1 -- Evet --&gt; M2{Yine de gönderilsin mi?}
+    M2 -- Hayır --&gt; I
+    M2 -- Evet --&gt; N
+    M1 -- Hayır --&gt; N
+    N --&gt; P{Sunucu kabul etti mi?}
+    P -- Hayır, ağ hatası --&gt; P1[Tekrar dene uyarısı] --&gt; N
+    P -- Evet --&gt; Q[Teslim edildi ekranı]
+    Q --&gt; R([Bitir])
+</textarea>
+</section>
+<section id="d7">
+<header><div><span class="file">07-flow-complexity.mmd</span><h2>Akış diyagramı: sunucuda puanlama ve karmaşıklık</h2><p>Teslimden sonra Egitmen.exe&#x27;de: gizli testler dahil doğrulama, süre/bellek ölçümü ve puan formülü.</p></div>
+<button type="button" class="copy" data-src="s7">Kaynağı kopyala</button></header>
+<div class="canvas"><pre class="mermaid">flowchart TD
+    A([Egitmen.exe: teslim edilen kod kuyruktan alındı]) --&gt; B[&quot;gcc -std=c11 -O0 main.c -o prog&lt;br/&gt;(zaman aşımı: 10 sn)&quot;]
+    B --&gt; C{Derlendi mi?}
+    C -- Hayır --&gt; C1[Derleyici çıktısını döndür&lt;br/&gt;puan = 0] --&gt; Z([Bitti])
+    C -- Evet --&gt; D[Gizliler dahil her test case için&lt;br/&gt;stdin ver, stdout karşılaştır&lt;br/&gt;süre limiti: 2 sn]
+    D --&gt; E[geçen / toplam test]
+    E --&gt; F[&quot;Girdi boyutları üret&lt;br/&gt;n = 1k, 2k, 4k, 8k, 16k, 32k&quot;]
+    F --&gt; G[&quot;Her n için programı 3 kez çalıştır&lt;br/&gt;medyan süre t(n) ve&lt;br/&gt;tepe bellek m(n) ölç&quot;]
+    G --&gt; H[&quot;log t(n) – log n doğrusal regresyon&lt;br/&gt;eğim k ≈ büyüme derecesi&quot;]
+    H --&gt; I{&quot;Aday modellerle uyum&lt;br/&gt;1, log n, n, n log n, n², n³, 2ⁿ&lt;br/&gt;en yüksek R² olan&quot;}
+    I --&gt; J[Zaman karmaşıklığı]
+    G --&gt; K[&quot;Aynı yöntem m(n) için&quot;]
+    K --&gt; L[Yer karmaşıklığı]
+    J --&gt; M{Ölçülen ≤ eğitmenin&lt;br/&gt;beklediği mi?}
+    L --&gt; M
+    M -- Evet --&gt; N[karmaşıklık puanı = 1]
+    M -- Bir sınıf kötü --&gt; O[karmaşıklık puanı = 0.5]
+    M -- Daha kötü --&gt; P[karmaşıklık puanı = 0]
+    N --&gt; Q
+    O --&gt; Q
+    P --&gt; Q
+    Q[&quot;Soru puanı = P × (w_test × geçen/toplam&lt;br/&gt;+ w_karm × karmaşıklık puanı)&quot;]
+    Q --&gt; R[Sonucu kaydet ve raporla] --&gt; Z
+</pre></div>
+<textarea id="s7" hidden readonly>flowchart TD
+    A([Egitmen.exe: teslim edilen kod kuyruktan alındı]) --&gt; B[&quot;gcc -std=c11 -O0 main.c -o prog&lt;br/&gt;(zaman aşımı: 10 sn)&quot;]
+    B --&gt; C{Derlendi mi?}
+    C -- Hayır --&gt; C1[Derleyici çıktısını döndür&lt;br/&gt;puan = 0] --&gt; Z([Bitti])
+    C -- Evet --&gt; D[Gizliler dahil her test case için&lt;br/&gt;stdin ver, stdout karşılaştır&lt;br/&gt;süre limiti: 2 sn]
+    D --&gt; E[geçen / toplam test]
+    E --&gt; F[&quot;Girdi boyutları üret&lt;br/&gt;n = 1k, 2k, 4k, 8k, 16k, 32k&quot;]
+    F --&gt; G[&quot;Her n için programı 3 kez çalıştır&lt;br/&gt;medyan süre t(n) ve&lt;br/&gt;tepe bellek m(n) ölç&quot;]
+    G --&gt; H[&quot;log t(n) – log n doğrusal regresyon&lt;br/&gt;eğim k ≈ büyüme derecesi&quot;]
+    H --&gt; I{&quot;Aday modellerle uyum&lt;br/&gt;1, log n, n, n log n, n², n³, 2ⁿ&lt;br/&gt;en yüksek R² olan&quot;}
+    I --&gt; J[Zaman karmaşıklığı]
+    G --&gt; K[&quot;Aynı yöntem m(n) için&quot;]
+    K --&gt; L[Yer karmaşıklığı]
+    J --&gt; M{Ölçülen ≤ eğitmenin&lt;br/&gt;beklediği mi?}
+    L --&gt; M
+    M -- Evet --&gt; N[karmaşıklık puanı = 1]
+    M -- Bir sınıf kötü --&gt; O[karmaşıklık puanı = 0.5]
+    M -- Daha kötü --&gt; P[karmaşıklık puanı = 0]
+    N --&gt; Q
+    O --&gt; Q
+    P --&gt; Q
+    Q[&quot;Soru puanı = P × (w_test × geçen/toplam&lt;br/&gt;+ w_karm × karmaşıklık puanı)&quot;]
+    Q --&gt; R[Sonucu kaydet ve raporla] --&gt; Z
+</textarea>
+</section>
+<section id="d8">
+<header><div><span class="file">08-deployment.mmd</span><h2>Dağıtım diyagramı</h2><p>İki exe: Egitmen.exe sunucu bilgisayarında, Ogrenci.exe öğrenci bilgisayarlarında. PostgreSQL yalnızca localhost&#x27;u dinler.</p></div>
+<button type="button" class="copy" data-src="s8">Kaynağı kopyala</button></header>
+<div class="canvas"><pre class="mermaid">flowchart LR
+    subgraph EPC[&quot;💻 Eğitmen bilgisayarı — Egitmen.exe&quot;]
+        direction TB
+        EUI[&quot;Eğitmen paneli (WPF)&quot;]
+        SRV[&quot;ExamServer&lt;br/&gt;TCP :5050&quot;]
+        EVAL[&quot;Puanlama&lt;br/&gt;gcc + karmaşıklık ölçümü&quot;]
+        DB[(&quot;PostgreSQL&lt;br/&gt;yalnızca localhost:5432&quot;)]
+        LOG[&quot;Log dosyaları&quot;]
+        EUI &lt;--&gt; SRV
+        SRV --&gt; EVAL
+        SRV &lt;--&gt; DB
+        SRV --&gt; LOG
+    end
+
+    subgraph NET[&quot;Lab LAN / WiFi — internet gerekmez&quot;]
+        SW{{&quot;Switch / Access Point&quot;}}
+    end
+
+    subgraph S1[&quot;🖥 Öğrenci PC 1 — Ogrenci.exe&quot;]
+        C1[&quot;Sınav ekranı&quot;]
+        G1[&quot;gcc: Derle ve test et&quot;]
+        C1 --&gt; G1
+    end
+    subgraph SN[&quot;🖥 Öğrenci PC n — Ogrenci.exe&quot;]
+        CN[&quot;Sınav ekranı&quot;]
+        GN[&quot;gcc: Derle ve test et&quot;]
+        CN --&gt; GN
+    end
+
+    SRV &lt;-- &quot;JSON satırları&lt;br/&gt;LOGIN · EXAM · SUBMIT&quot; --&gt; SW
+    SW &lt;--&gt; C1
+    SW &lt;--&gt; CN
+</pre></div>
+<textarea id="s8" hidden readonly>flowchart LR
+    subgraph EPC[&quot;💻 Eğitmen bilgisayarı — Egitmen.exe&quot;]
+        direction TB
+        EUI[&quot;Eğitmen paneli (WPF)&quot;]
+        SRV[&quot;ExamServer&lt;br/&gt;TCP :5050&quot;]
+        EVAL[&quot;Puanlama&lt;br/&gt;gcc + karmaşıklık ölçümü&quot;]
+        DB[(&quot;PostgreSQL&lt;br/&gt;yalnızca localhost:5432&quot;)]
+        LOG[&quot;Log dosyaları&quot;]
+        EUI &lt;--&gt; SRV
+        SRV --&gt; EVAL
+        SRV &lt;--&gt; DB
+        SRV --&gt; LOG
+    end
+
+    subgraph NET[&quot;Lab LAN / WiFi — internet gerekmez&quot;]
+        SW{{&quot;Switch / Access Point&quot;}}
+    end
+
+    subgraph S1[&quot;🖥 Öğrenci PC 1 — Ogrenci.exe&quot;]
+        C1[&quot;Sınav ekranı&quot;]
+        G1[&quot;gcc: Derle ve test et&quot;]
+        C1 --&gt; G1
+    end
+    subgraph SN[&quot;🖥 Öğrenci PC n — Ogrenci.exe&quot;]
+        CN[&quot;Sınav ekranı&quot;]
+        GN[&quot;gcc: Derle ve test et&quot;]
+        CN --&gt; GN
+    end
+
+    SRV &lt;-- &quot;JSON satırları&lt;br/&gt;LOGIN · EXAM · SUBMIT&quot; --&gt; SW
+    SW &lt;--&gt; C1
+    SW &lt;--&gt; CN
+</textarea>
+</section>
+
+</div>
+<script>
+document.querySelectorAll(".copy").forEach(b => b.addEventListener("click", async () => {
+  const ta = document.getElementById(b.dataset.src);
+  const text = ta.value;
+  try { await navigator.clipboard.writeText(text); b.textContent = "Kopyalandı"; }
+  catch { ta.hidden = false; ta.style.cssText = "width:100%;height:200px;font-family:var(--mono);font-size:12px"; ta.select(); b.textContent = "Seçildi, Ctrl+C"; }
+  setTimeout(() => b.textContent = "Kaynağı kopyala", 1800);
+}));
+</script>

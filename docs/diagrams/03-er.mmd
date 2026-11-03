@@ -1,0 +1,109 @@
+erDiagram
+    USERS {
+        int id PK
+        varchar username UK
+        varchar password_hash
+        varchar full_name
+        varchar role "EGITMEN | OGRENCI"
+        varchar student_number UK
+        varchar class_name
+        timestamp created_at
+    }
+    CATEGORIES {
+        int id PK
+        varchar name UK
+    }
+    QUESTIONS {
+        int id PK
+        int category_id FK
+        varchar type "COKTAN_SECMELI | KLASIK | KODLAMA"
+        text body
+        int default_points
+        text expected_answer
+        varchar expected_time_complexity
+        varchar expected_space_complexity
+        text starter_code
+        int created_by FK
+        timestamp created_at
+    }
+    QUESTION_OPTIONS {
+        int id PK
+        int question_id FK
+        char label
+        text body
+        boolean is_correct
+    }
+    TEST_CASES {
+        int id PK
+        int question_id FK
+        text input
+        text expected_output
+        boolean is_hidden
+    }
+    EXAMS {
+        int id PK
+        varchar title
+        varchar class_name
+        int duration_minutes
+        varchar status "TASLAK | YAYINDA | BITTI"
+        numeric test_case_weight
+        numeric complexity_weight
+        timestamp started_at
+        int created_by FK
+    }
+    EXAM_QUESTIONS {
+        int exam_id PK, FK
+        int question_id PK, FK
+        int order_no
+        int points
+    }
+    SUBMISSIONS {
+        int id PK
+        int exam_id FK
+        int student_id FK
+        timestamp submitted_at
+        varchar client_ip
+        numeric total_score
+        int correct_count
+    }
+    ANSWERS {
+        int id PK
+        int submission_id FK
+        int question_id FK
+        int selected_option_id FK
+        text answer_text
+        text code
+        boolean is_correct
+        numeric score
+    }
+    CODE_RESULTS {
+        int answer_id PK, FK
+        boolean compiled
+        text compiler_output
+        int passed_tests
+        int total_tests
+        varchar measured_time
+        varchar measured_space
+    }
+    LOGS {
+        bigint id PK
+        int exam_id FK
+        timestamp created_at
+        varchar level
+        varchar source
+        text message
+    }
+
+    CATEGORIES ||--o{ QUESTIONS : "içerir"
+    USERS ||--o{ QUESTIONS : "oluşturur"
+    QUESTIONS ||--o{ QUESTION_OPTIONS : "şıkları"
+    QUESTIONS ||--o{ TEST_CASES : "testleri"
+    USERS ||--o{ EXAMS : "hazırlar"
+    EXAMS ||--|{ EXAM_QUESTIONS : "içerir"
+    QUESTIONS ||--o{ EXAM_QUESTIONS : "kullanılır"
+    EXAMS ||--o{ SUBMISSIONS : "alır"
+    USERS ||--o{ SUBMISSIONS : "gönderir"
+    SUBMISSIONS ||--|{ ANSWERS : "içerir"
+    QUESTIONS ||--o{ ANSWERS : "cevaplanır"
+    ANSWERS ||--o| CODE_RESULTS : "kod sonucu"
+    EXAMS ||--o{ LOGS : "kayıt"

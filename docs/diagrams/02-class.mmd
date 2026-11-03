@@ -1,0 +1,132 @@
+classDiagram
+    direction LR
+
+    namespace SinavSistemi_Shared {
+        class User {
+            +int Id
+            +string Username
+            +string FullName
+            +UserRole Role
+            +string StudentNumber
+            +string ClassName
+        }
+        class Session {
+            +User User
+            +string Token
+        }
+        class Question {
+            +int Id
+            +QuestionType Type
+            +string Category
+            +string Text
+            +int DefaultPoints
+            +string ExpectedAnswer
+            +Complexity ExpectedTimeComplexity
+            +Complexity ExpectedSpaceComplexity
+        }
+        class QuestionOption {
+            +string Label
+            +string Text
+            +bool IsCorrect
+        }
+        class TestCase {
+            +string Input
+            +string ExpectedOutput
+            +bool IsHidden
+        }
+        class Exam {
+            +int Id
+            +string Title
+            +int DurationMinutes
+            +DateTime StartedAt
+            +double TestCaseWeight
+            +double ComplexityWeight
+            +EndsAt() DateTime
+        }
+        class ExamQuestion {
+            +int Order
+            +int Points
+        }
+        class StudentAnswer {
+            +int QuestionId
+            +int SelectedOptionId
+            +string Text
+            +string Code
+        }
+        class Protocol {
+            <<static>>
+            +Serialize(type, payload, token) string
+            +Parse(line) Envelope
+            +StripForStudent(Exam) Exam
+        }
+        class MessageStream {
+            +SendAsync(type, payload, token)
+            +ReadAsync() Envelope
+        }
+        class GccRunner {
+            +string GccPath
+            +CompileAndTestAsync(code, tests) CodeRunResult
+        }
+    }
+
+    namespace Egitmen_exe {
+        class IAuthService {
+            <<interface>>
+            +LoginAsync(username, password) Session
+        }
+        class IQuestionService {
+            <<interface>>
+            +GetAllAsync() List~Question~
+            +AddAsync(Question)
+            +UpdateAsync(Question)
+            +DeleteAsync(id)
+        }
+        class IExamService {
+            <<interface>>
+            +SaveAsync(Exam) Exam
+            +GetResultsAsync(examId) List~ResultRow~
+            +GetLogsAsync() List~LogEntry~
+        }
+        class IExamServer {
+            <<interface>>
+            +StartAsync(port)
+            +BroadcastExamAsync(Exam)
+            +EndExamAsync(examId)
+        }
+        class ComplexityAnalyzer {
+            +Measure(binary, sizes) Complexity[2]
+        }
+        class InstructorShellViewModel
+    }
+
+    namespace Ogrenci_exe {
+        class IExamClient {
+            <<interface>>
+            +LoginAsync(ip, port, no, password) LoginResult
+            +SubmitAsync(examId, answers) SubmitResult
+            +SendProgressAsync(examId, count)
+        }
+        class ExamSessionViewModel
+        class AnswerViewModel
+    }
+
+    Session --> User
+    Question "1" *-- "0..*" QuestionOption
+    Question "1" *-- "0..*" TestCase
+    Exam "1" *-- "1..*" ExamQuestion
+    ExamQuestion "0..*" --> "1" Question
+
+    InstructorShellViewModel ..> IQuestionService
+    InstructorShellViewModel ..> IExamService
+    InstructorShellViewModel ..> IExamServer
+    IExamServer ..> IAuthService : öğrenci LOGIN
+    IExamServer ..> MessageStream
+    IExamServer ..> Protocol : StripForStudent
+    IExamServer ..> GccRunner : teslim sonrası puanlama
+    IExamServer ..> ComplexityAnalyzer : final
+
+    ExamSessionViewModel "1" *-- "1..*" AnswerViewModel
+    ExamSessionViewModel ..> IExamClient
+    AnswerViewModel ..> GccRunner : Derle ve test et
+    IExamClient ..> MessageStream
+    AnswerViewModel ..> StudentAnswer

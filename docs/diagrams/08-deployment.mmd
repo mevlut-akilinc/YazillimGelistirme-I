@@ -1,0 +1,32 @@
+flowchart LR
+    subgraph EPC["💻 Eğitmen bilgisayarı — Egitmen.exe"]
+        direction TB
+        EUI["Eğitmen paneli (WPF)"]
+        SRV["ExamServer<br/>TCP :5050"]
+        EVAL["Puanlama<br/>gcc + karmaşıklık ölçümü"]
+        DB[("PostgreSQL<br/>yalnızca localhost:5432")]
+        LOG["Log dosyaları"]
+        EUI <--> SRV
+        SRV --> EVAL
+        SRV <--> DB
+        SRV --> LOG
+    end
+
+    subgraph NET["Lab LAN / WiFi — internet gerekmez"]
+        SW{{"Switch / Access Point"}}
+    end
+
+    subgraph S1["🖥 Öğrenci PC 1 — Ogrenci.exe"]
+        C1["Sınav ekranı"]
+        G1["gcc: Derle ve test et"]
+        C1 --> G1
+    end
+    subgraph SN["🖥 Öğrenci PC n — Ogrenci.exe"]
+        CN["Sınav ekranı"]
+        GN["gcc: Derle ve test et"]
+        CN --> GN
+    end
+
+    SRV <-- "JSON satırları<br/>LOGIN · EXAM · SUBMIT" --> SW
+    SW <--> C1
+    SW <--> CN

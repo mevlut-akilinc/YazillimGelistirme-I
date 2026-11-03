@@ -1,0 +1,35 @@
+flowchart TD
+    A([Başla]) --> B[Uygulamayı aç]
+    B --> C[Rol: Öğrenci seç<br/>numara, şifre, sunucu IP gir]
+    C --> D{IP geçerli ve<br/>sunucuya ulaşıldı mı?}
+    D -- Hayır --> D1[Bağlantı hatası göster] --> C
+    D -- Evet --> E{Kimlik doğru mu?}
+    E -- Hayır --> E1[Hatalı giriş uyarısı] --> C
+    E -- Evet --> F[Bekleme ekranı]
+    F --> G{Sınav geldi mi?}
+    G -- Hayır --> F
+    G -- Evet --> H[Sınav ekranı açılır<br/>geri sayım başlar]
+    H --> I[Soruyu görüntüle]
+    I --> J{Soru türü}
+    J -- Çoktan seçmeli --> K1[Şık seç]
+    J -- Klasik --> K2[Cevap yaz]
+    J -- Kodlama --> K3[Kod yaz → Derle ve test et<br/>bu bilgisayardaki gcc ile]
+    K3 --> K4{Derleme hatası?}
+    K4 -- Evet --> K5[Hata mesajını göster] --> K3
+    K4 -- Hayır --> K6[Görünür testlerden<br/>geçen sayısını göster]
+    K1 --> L
+    K2 --> L
+    K6 --> L
+    L{Süre doldu mu?}
+    L -- Evet --> N[Cevapları otomatik gönder]
+    L -- Hayır --> M{Öğrenci 'Bitir'e bastı mı?}
+    M -- Hayır --> I
+    M -- Evet --> M1{Boş soru var mı?}
+    M1 -- Evet --> M2{Yine de gönderilsin mi?}
+    M2 -- Hayır --> I
+    M2 -- Evet --> N
+    M1 -- Hayır --> N
+    N --> P{Sunucu kabul etti mi?}
+    P -- Hayır, ağ hatası --> P1[Tekrar dene uyarısı] --> N
+    P -- Evet --> Q[Teslim edildi ekranı]
+    Q --> R([Bitir])

@@ -1,0 +1,46 @@
+sequenceDiagram
+    autonumber
+    actor E as Eğitmen
+    participant EU as Egitmen.exe · Arayüz
+    participant S as Egitmen.exe · ExamServer
+    participant DB as PostgreSQL
+    participant C as Ogrenci.exe (n adet)
+    actor O as Öğrenci
+
+    E->>EU: Sunucuyu başlat
+    EU->>S: StartAsync(5050)
+    S->>DB: INSERT log "sunucu açıldı"
+    C->>S: Bağlan + LOGIN
+    S-->>EU: StudentConnected (canlı liste)
+    E->>EU: Sınavı seç → Dağıt
+    EU->>S: BroadcastExamAsync(exam)
+    S->>DB: UPDATE exams SET status='YAYINDA', started_at=now()
+    par Tüm bağlı öğrencilere eş zamanlı
+        S->>C: EXAM {StripForStudent: cevap anahtarı ve gizli testler hariç}
+    end
+    C-->>O: Sınav ekranı + geri sayım
+    loop Sınav süresince
+        O->>C: Cevap seç / yaz
+        opt Kodlama sorusu
+            C->>C: gcc ile derle, görünür testleri çalıştır
+            C-->>O: Hata veya geçen test sayısı
+        end
+        C->>S: PROGRESS {cevaplanan sayısı}
+        S-->>EU: StudentChanged
+    end
+    O->>C: Sınavı bitir ve gönder
+    C->>S: SUBMIT {examId, cevaplar}
+    S->>S: now() <= bitiş zamanı mı?
+    alt Süre içinde
+        S->>S: Cevap anahtarı ile puanla (ÇS, klasik)
+        S->>S: Kodlama: gcc ile TÜM testler + karmaşıklık ölçümü (kuyrukta)
+        S->>DB: INSERT submissions, answers
+        S->>DB: INSERT log "teslim etti" (tarih-saat, IP)
+        S-->>C: SUBMIT_OK
+        C-->>O: "Sınav teslim edildi"
+    else Süre doldu
+        S->>DB: INSERT log "geç gönderim reddedildi"
+        S-->>C: SUBMIT_REJECTED
+    end
+    E->>EU: Sonuçlar
+    EU->>DB: Öğrenci bazlı puanlar + sınıf ortalaması

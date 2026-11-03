@@ -1,0 +1,35 @@
+sequenceDiagram
+    autonumber
+    actor O as Öğrenci
+    participant UI as Ogrenci.exe · LoginWindow
+    participant VM as LoginViewModel
+    participant C as Ogrenci.exe · ExamClient
+    participant S as Egitmen.exe · ExamServer
+    participant A as Egitmen.exe · Şifre kontrolü
+    participant DB as PostgreSQL (localhost)
+
+    O->>UI: Rol=Öğrenci, numara, şifre, sunucu IP
+    UI->>VM: LoginCommand
+    VM->>VM: Alanları doğrula (boş mu, IP geçerli mi)
+    VM->>C: ConnectAsync(ip, 5050)
+    C->>S: TCP bağlantısı
+    S-->>C: Bağlantı kabul
+    C->>S: LOGIN {numara, şifre, rol}
+    S->>S: Bu numara başka PC'de açık mı?
+    S->>A: Doğrula(numara, şifre)
+    A->>DB: SELECT password_hash, role FROM users WHERE username=?
+    DB-->>A: kayıt
+    A->>A: Şifre hash karşılaştır (BCrypt)
+    alt Bilgiler doğru
+        A-->>S: Session(token)
+        S->>DB: INSERT INTO logs (bağlandı)
+        S-->>C: LOGIN_OK {token, ad soyad}
+        C-->>VM: Session
+        VM-->>UI: LoginSucceeded
+        UI->>UI: StudentWindow aç (bekleme ekranı)
+    else Hatalı
+        A-->>S: null
+        S-->>C: LOGIN_FAIL
+        C-->>VM: null
+        VM-->>UI: "Kullanıcı adı veya şifre hatalı"
+    end
