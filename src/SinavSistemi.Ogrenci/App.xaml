@@ -1,0 +1,18 @@
+<Application x:Class="SinavSistemi.Ogrenci.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:SinavSistemi.Ogrenci.ViewModels"
+             xmlns:v="clr-namespace:SinavSistemi.Ogrenci.Views"
+             StartupUri="Views/LoginWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/SinavSistemi.Shared;component/Themes/Theme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <DataTemplate DataType="{x:Type vm:StudentLobbyViewModel}"><v:StudentLobbyView/></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:ExamSessionViewModel}"><v:ExamSessionView/></DataTemplate>
+            <DataTemplate DataType="{x:Type vm:SubmittedViewModel}"><v:SubmittedView/></DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

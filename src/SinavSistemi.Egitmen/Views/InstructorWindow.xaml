@@ -1,0 +1,55 @@
+<Window x:Class="SinavSistemi.Egitmen.Views.InstructorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Eğitmen Paneli — Lab Sınav Sistemi" Width="1280" Height="800" MinWidth="1100" MinHeight="680"
+        WindowStartupLocation="CenterScreen" WindowState="Maximized"
+        Background="{StaticResource BgBrush}" FontFamily="{StaticResource UiFont}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="232"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Sol menü -->
+        <Border Background="{StaticResource SidebarBrush}">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="22,24,22,28">
+                    <TextBlock Text="Lab Sınav" Foreground="White" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Text="Eğitmen paneli" Foreground="{StaticResource SidebarTextBrush}" FontSize="12"/>
+                </StackPanel>
+
+                <Border DockPanel.Dock="Bottom" BorderBrush="#22303F" BorderThickness="0,1,0,0" Padding="22,16">
+                    <StackPanel>
+                        <TextBlock Text="{Binding UserName}" Foreground="White" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                        <Button Content="Çıkış yap" Command="{Binding LogoutCommand}" Style="{StaticResource LinkButton}"
+                                Foreground="{StaticResource SidebarTextBrush}" HorizontalAlignment="Left" Padding="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel>
+                    <RadioButton Content="Genel Bakış" GroupName="nav" Style="{StaticResource NavItem}"
+                                 Command="{Binding NavigateCommand}" CommandParameter="dashboard"
+                                 IsChecked="{Binding CurrentKey, Mode=OneWay, Converter={StaticResource Equals}, ConverterParameter=dashboard}"/>
+                    <RadioButton Content="Soru Bankası" GroupName="nav" Style="{StaticResource NavItem}"
+                                 Command="{Binding NavigateCommand}" CommandParameter="questions"
+                                 IsChecked="{Binding CurrentKey, Mode=OneWay, Converter={StaticResource Equals}, ConverterParameter=questions}"/>
+                    <RadioButton Content="Sınav Oluştur" GroupName="nav" Style="{StaticResource NavItem}"
+                                 Command="{Binding NavigateCommand}" CommandParameter="builder"
+                                 IsChecked="{Binding CurrentKey, Mode=OneWay, Converter={StaticResource Equals}, ConverterParameter=builder}"/>
+                    <RadioButton Content="Canlı Sınav" GroupName="nav" Style="{StaticResource NavItem}"
+                                 Command="{Binding NavigateCommand}" CommandParameter="live"
+                                 IsChecked="{Binding CurrentKey, Mode=OneWay, Converter={StaticResource Equals}, ConverterParameter=live}"/>
+                    <RadioButton Content="Sonuçlar" GroupName="nav" Style="{StaticResource NavItem}"
+                                 Command="{Binding NavigateCommand}" CommandParameter="results"
+                                 IsChecked="{Binding CurrentKey, Mode=OneWay, Converter={StaticResource Equals}, ConverterParameter=results}"/>
+                    <RadioButton Content="Log Kayıtları" GroupName="nav" Style="{StaticResource NavItem}"
+                                 Command="{Binding NavigateCommand}" CommandParameter="logs"
+                                 IsChecked="{Binding CurrentKey, Mode=OneWay, Converter={StaticResource Equals}, ConverterParameter=logs}"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Aktif sayfa: App.xaml'daki DataTemplate'ler doğru View'ı seçer -->
+        <ContentControl Grid.Column="1" Content="{Binding CurrentPage}" Margin="32,28"/>
+    </Grid>
+</Window>

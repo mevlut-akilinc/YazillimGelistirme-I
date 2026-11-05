@@ -1,0 +1,156 @@
+<UserControl x:Class="SinavSistemi.Egitmen.Views.LiveExamView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,20">
+            <TextBlock Text="Canlı Sınav" Style="{StaticResource H1}"/>
+            <TextBlock Text="Sunucuyu başlatın, öğrenciler bağlandıktan sonra sınavı dağıtın" Style="{StaticResource Caption}" Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Kontrol satırı -->
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="200"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 1. Sunucu -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="1 · SUNUCU" Style="{StaticResource FieldLabel}"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,12">
+                        <Ellipse Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{StaticResource MutedBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsServerRunning}" Value="True">
+                                            <Setter Property="Fill" Value="{StaticResource SuccessBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock Text="{Binding ServerAddress}" FontSize="16" FontWeight="SemiBold" FontFamily="{StaticResource CodeFont}"/>
+                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="70"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding Port}" ToolTip="Port" IsEnabled="{Binding IsServerRunning, Converter={StaticResource Equals}, ConverterParameter=False}"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Başlat" Style="{StaticResource PrimaryButton}" Command="{Binding StartServerCommand}" Margin="0,0,8,0"/>
+                            <Button Content="Durdur" Style="{StaticResource SecondaryButton}" Command="{Binding StopServerCommand}"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- 2. Sınav seçimi ve dağıtım -->
+            <Border Grid.Column="2" Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="2 · SINAV" Style="{StaticResource FieldLabel}"/>
+                    <ComboBox ItemsSource="{Binding Exams}" SelectedItem="{Binding SelectedExam}" DisplayMemberPath="Title"
+                              Margin="0,4,0,12" IsEnabled="{Binding HasActiveExam, Converter={StaticResource Equals}, ConverterParameter=False}"/>
+                    <Grid>
+                        <TextBlock Style="{StaticResource Caption}" VerticalAlignment="Center">
+                            <Run Text="{Binding SelectedExam.Questions.Count, Mode=OneWay}"/> soru ·
+                            <Run Text="{Binding SelectedExam.DurationMinutes, Mode=OneWay}"/> dk ·
+                            sınıf <Run Text="{Binding SelectedExam.ClassName, Mode=OneWay}"/>
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Sınavı dağıt" Style="{StaticResource PrimaryButton}" Command="{Binding DistributeCommand}" Margin="0,0,8,0"/>
+                            <Button Content="Sınavı bitir" Style="{StaticResource DangerButton}" Command="{Binding EndExamCommand}"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Kalan süre -->
+            <Border Grid.Column="4" Style="{StaticResource Card}" Background="{StaticResource SidebarBrush}" BorderBrush="{StaticResource SidebarBrush}">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="KALAN SÜRE" Style="{StaticResource FieldLabel}" Foreground="{StaticResource SidebarTextBrush}"/>
+                    <TextBlock Text="{Binding RemainingTime}" FontSize="36" FontWeight="SemiBold" Foreground="White"
+                               FontFamily="{StaticResource CodeFont}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Sayaçlar -->
+        <UniformGrid DockPanel.Dock="Top" Columns="3" Margin="0,0,-16,16">
+            <Border Style="{StaticResource Card}" Margin="0,0,16,0" Padding="20,14">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding ConnectedCount}" Style="{StaticResource StatNumber}" Foreground="{StaticResource InfoBrush}"/>
+                    <TextBlock Text="bağlı öğrenci" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,16,0" Padding="20,14">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding InExamCount}" Style="{StaticResource StatNumber}" Foreground="{StaticResource AccentBrush}"/>
+                    <TextBlock Text="sınavda" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,16,0" Padding="20,14">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding SubmittedCount}" Style="{StaticResource StatNumber}" Foreground="{StaticResource SuccessBrush}"/>
+                    <TextBlock Text="teslim etti" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+
+        <!-- Öğrenciler | Canlı log -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Style="{StaticResource Card}" Padding="0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Bağlı öğrenciler" Style="{StaticResource H2}" Margin="20,16,20,10"/>
+                    <DataGrid ItemsSource="{Binding Students}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ÖĞRENCİ NO" Binding="{Binding StudentNumber}" Width="110"/>
+                            <DataGridTextColumn Header="AD SOYAD" Binding="{Binding FullName}" Width="*"/>
+                            <DataGridTextColumn Header="IP" Binding="{Binding IpAddress}" Width="120"/>
+                            <DataGridTextColumn Header="CEVAP" Binding="{Binding AnsweredCount}" Width="70"/>
+                            <DataGridTemplateColumn Header="DURUM" Width="130">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource Badge}" Background="{Binding State, Converter={StaticResource StatusBrush}}">
+                                            <TextBlock Text="{Binding State, Converter={StaticResource EnumText}}" Foreground="White" FontSize="11" FontWeight="SemiBold"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Canlı log" Style="{StaticResource H2}" Margin="20,16,20,10"/>
+                    <ListBox ItemsSource="{Binding LiveLog}" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="8,4">
+                                    <TextBlock FontSize="11" Foreground="{Binding Level, Converter={StaticResource StatusBrush}}" FontFamily="{StaticResource CodeFont}">
+                                        <Run Text="{Binding Time, StringFormat=HH:mm:ss, Mode=OneWay}"/>
+                                        <Run Text="{Binding Source, Mode=OneWay}"/>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="12"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</UserControl>
