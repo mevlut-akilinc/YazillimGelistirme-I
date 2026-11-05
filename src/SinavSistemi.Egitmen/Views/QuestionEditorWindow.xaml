@@ -1,0 +1,163 @@
+<Window x:Class="SinavSistemi.Egitmen.Views.QuestionEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding WindowTitle}" Width="760" Height="720" MinHeight="560"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Background="{StaticResource BgBrush}" FontFamily="{StaticResource UiFont}">
+    <DockPanel>
+        <!-- Alt çubuk -->
+        <Border DockPanel.Dock="Bottom" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}"
+                BorderThickness="0,1,0,0" Padding="24,14">
+            <Grid>
+                <TextBlock Text="{Binding Error}" Foreground="{StaticResource DangerBrush}" VerticalAlignment="Center"
+                           TextWrapping="Wrap" Margin="0,0,240,0"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="İptal" Style="{StaticResource SecondaryButton}" IsCancel="True" Margin="0,0,10,0"/>
+                    <Button Content="Kaydet" Style="{StaticResource PrimaryButton}" Command="{Binding SaveCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24">
+                <TextBlock Text="{Binding WindowTitle}" Style="{StaticResource H1}" Margin="0,0,0,20"/>
+
+                <!-- Genel -->
+                <Grid Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="100"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="SORU TÜRÜ" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox ItemsSource="{Binding TypeChoices}" DisplayMemberPath="Text"
+                                  SelectedValuePath="Value" SelectedValue="{Binding Type}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="KATEGORİ" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox ItemsSource="{Binding Categories}" IsEditable="True"
+                                  Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="PUAN" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Text="{Binding Points, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Text="SORU METNİ" Style="{StaticResource FieldLabel}"/>
+                <TextBox Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True"
+                         TextWrapping="Wrap" MinHeight="96" VerticalScrollBarVisibility="Auto" Margin="0,0,0,20"/>
+
+                <!-- Çoktan seçmeli -->
+                <Border Style="{StaticResource Card}" Visibility="{Binding IsMultipleChoice, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <TextBlock Text="Şıklar" Style="{StaticResource H2}"/>
+                            <TextBlock Text="doğru şıkkı soldaki daireden işaretleyin" Style="{StaticResource Caption}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Options}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="28"/>
+                                            <ColumnDefinition Width="28"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <RadioButton GroupName="correctOption" IsChecked="{Binding IsCorrect}"
+                                                     VerticalAlignment="Center" ToolTip="Doğru cevap"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Label}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        <TextBox Grid.Column="2" Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"/>
+                                        <Button Grid.Column="3" Content="✕" Style="{StaticResource LinkButton}" Foreground="{StaticResource MutedBrush}"
+                                                Margin="6,0,0,0" ToolTip="Şıkkı kaldır"
+                                                Command="{Binding DataContext.RemoveOptionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Button Content="+ Şık ekle" Style="{StaticResource LinkButton}" HorizontalAlignment="Left"
+                                Command="{Binding AddOptionCommand}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Klasik -->
+                <Border Style="{StaticResource Card}" Visibility="{Binding IsClassic, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <TextBlock Text="Cevap anahtarı" Style="{StaticResource H2}" Margin="0,0,0,4"/>
+                        <TextBlock Text="Öğrencinin cevabı büyük/küçük harf ve baştaki/sondaki boşluklar yok sayılarak bununla karşılaştırılır."
+                                   Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <TextBox Text="{Binding ExpectedAnswer, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Kodlama (final) -->
+                <StackPanel Visibility="{Binding IsCoding, Converter={StaticResource BoolToVis}}">
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="Beklenen karmaşıklık" Style="{StaticResource H2}" Margin="0,0,0,12"/>
+                            <UniformGrid Columns="2">
+                                <StackPanel Margin="0,0,8,0">
+                                    <TextBlock Text="ZAMAN" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding ComplexityChoices}" DisplayMemberPath="Text"
+                                              SelectedValuePath="Value" SelectedValue="{Binding ExpectedTime}"/>
+                                </StackPanel>
+                                <StackPanel Margin="8,0,0,0">
+                                    <TextBlock Text="YER (BELLEK)" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox ItemsSource="{Binding ComplexityChoices}" DisplayMemberPath="Text"
+                                              SelectedValuePath="Value" SelectedValue="{Binding ExpectedSpace}"/>
+                                </StackPanel>
+                            </UniformGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                        <StackPanel>
+                            <TextBlock Text="Test senaryoları" Style="{StaticResource H2}" Margin="0,0,0,12"/>
+                            <ItemsControl ItemsSource="{Binding TestCases}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="10"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock Text="GİRDİ (stdin)" Style="{StaticResource FieldLabel}"/>
+                                                <TextBox Text="{Binding Input, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True"
+                                                         FontFamily="{StaticResource CodeFont}" MinHeight="54"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Text="BEKLENEN ÇIKTI" Style="{StaticResource FieldLabel}"/>
+                                                <TextBox Text="{Binding ExpectedOutput, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True"
+                                                         FontFamily="{StaticResource CodeFont}" MinHeight="54"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="3" Margin="10,18,0,0">
+                                                <CheckBox Content="Gizli" IsChecked="{Binding IsHidden}" ToolTip="Öğrenci bu testin girdisini görmez"/>
+                                                <Button Content="Kaldır" Style="{StaticResource LinkButton}" Foreground="{StaticResource DangerBrush}" Padding="0,6,0,0"
+                                                        Command="{Binding DataContext.RemoveTestCaseCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <Button Content="+ Test senaryosu ekle" Style="{StaticResource LinkButton}" HorizontalAlignment="Left"
+                                    Command="{Binding AddTestCaseCommand}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="BAŞLANGIÇ KODU (opsiyonel)" Style="{StaticResource FieldLabel}"/>
+                    <TextBox Text="{Binding StarterCode, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CodeEditor}" Height="160"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>
