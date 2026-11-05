@@ -71,6 +71,7 @@ internal class MockQuestionService : IQuestionService
 internal class MockExamService : IExamService
 {
     private readonly List<Exam> _exams = new() { MockData.SampleExam() };
+    private readonly List<Submission> _submissions = new();
 
     public Task<IReadOnlyList<Exam>> GetExamsAsync() => Task.FromResult<IReadOnlyList<Exam>>(_exams.ToList());
 
@@ -80,22 +81,37 @@ internal class MockExamService : IExamService
         return Task.FromResult(exam);
     }
 
+    /// <summary>Teslimi bellekte saklar. Sunucu thread'lerinden aynı anda çağrılabileceği için lock kullanılır.</summary>
+    public Task SaveSubmissionAsync(Submission submission)
+    {
+        lock (_submissions)
+        {
+            submission.Id = _submissions.Count + 1;
+            _submissions.Add(submission);
+        }
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Kaydedilmiş teslimleri Sonuçlar ekranının satır biçimine çevirir.</summary>
     public Task<IReadOnlyList<ResultRow>> GetResultsAsync(int examId)
     {
-        var rnd = new Random(examId);
-        var rows = MockData.Students.Select(s =>
+        List<ResultRow> rows;
+        lock (_submissions)
         {
-            int correct = rnd.Next(2, 7);
-            return new ResultRow
-            {
-                StudentNumber = s.No, FullName = s.Name, ClassName = "1-A",
-                CorrectCount = correct, TotalQuestions = 6,
-                Score = Math.Round(correct / 6.0 * 100, 1),
-                SubmittedAt = DateTime.Now.AddMinutes(-rnd.Next(1, 15)),
-                TimeComplexity = rnd.Next(2) == 0 ? "O(n log n)" : "O(n²)",
-                SpaceComplexity = "O(n)"
-            };
-        }).ToList();
+            rows = _submissions
+                .Where(s => s.ExamId == examId)
+                .Select(s => new ResultRow
+                {
+                    StudentNumber = s.Student.StudentNumber ?? s.Student.Username,
+                    FullName = s.Student.FullName,
+                    ClassName = s.Student.ClassName ?? "",
+                    CorrectCount = s.CorrectCount,
+                    TotalQuestions = s.GradedCount,
+                    Score = s.Score,
+                    SubmittedAt = s.SubmittedAt
+                })
+                .ToList();
+        }
         return Task.FromResult<IReadOnlyList<ResultRow>>(rows);
     }
 
@@ -145,8 +161,11 @@ internal class MockExamServer : IExamServer
                 var s = MockData.Students[i++];
                 var cs = new ConnectedStudent
                 {
-                    StudentNumber = s.No, FullName = s.Name, IpAddress = s.Ip,
-                    ConnectedAt = DateTime.Now, State = ClientState.Bagli
+                    StudentNumber = s.No,
+                    FullName = s.Name,
+                    IpAddress = s.Ip,
+                    ConnectedAt = DateTime.Now,
+                    State = ClientState.Bagli
                 };
                 _students.Add(cs);
                 StudentConnected?.Invoke(this, cs);

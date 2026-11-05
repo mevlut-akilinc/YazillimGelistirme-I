@@ -47,6 +47,13 @@ public class Submission
     public User Student { get; set; } = new();
     public List<StudentAnswer> Answers { get; set; } = new();
     public DateTime SubmittedAt { get; set; }
-    public double Score { get; set; }
+    public string IpAddress { get; set; } = "";
+
+    // Grader sonucu
+    public int EarnedPoints { get; set; }
+    public int MaxPoints { get; set; }
     public int CorrectCount { get; set; }
+    public int GradedCount { get; set; }
+    /// <summary>100 üzerinden puan.</summary>
+    public double Score { get; set; }
 }

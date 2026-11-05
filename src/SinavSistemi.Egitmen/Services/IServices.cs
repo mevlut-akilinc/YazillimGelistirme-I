@@ -32,6 +32,7 @@ public interface IExamService
 {
     Task<IReadOnlyList<Exam>> GetExamsAsync();
     Task<Exam> SaveAsync(Exam exam);
+    Task SaveSubmissionAsync(Submission submission);
     Task<IReadOnlyList<ResultRow>> GetResultsAsync(int examId);
     Task<IReadOnlyList<LogEntry>> GetLogsAsync(int? examId = null);
 }
