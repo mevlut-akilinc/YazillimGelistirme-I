@@ -36,6 +36,25 @@ internal class MockAuthService : IAuthService
     }
 }
 
+/// <summary>Demo: listedeki (veya herhangi bir) numara + şifre 1234.</summary>
+internal class MockStudentAuthenticator : IStudentAuthenticator
+{
+    public Task<User?> ValidateAsync(string studentNumber, string password)
+    {
+        if (password != "1234") return Task.FromResult<User?>(null);
+
+        var known = MockData.Students.FirstOrDefault(s => s.No == studentNumber);
+        return Task.FromResult<User?>(new User
+        {
+            Username = studentNumber,
+            StudentNumber = studentNumber,
+            FullName = known.Name ?? $"Öğrenci {studentNumber}",
+            ClassName = "1-A",
+            Role = UserRole.Ogrenci
+        });
+    }
+}
+
 internal class MockQuestionService : IQuestionService
 {
     private int _nextId = 100;

@@ -17,6 +17,16 @@ public interface IAuthService
     Session? CurrentSession { get; }
 }
 
+/// <summary>
+/// Öğrenci girişini doğrular. IExamServer, ağdan gelen LOGIN mesajında bunu çağırır.
+/// Gerçek implementasyon: PostgreSQL'den öğrenciyi bulup şifre hash'ini (BCrypt) karşılaştırır.
+/// </summary>
+public interface IStudentAuthenticator
+{
+    /// <returns>Bilgiler doğruysa öğrenci, değilse null.</returns>
+    Task<User?> ValidateAsync(string studentNumber, string password);
+}
+
 /// <summary>Soru bankası CRUD + kategoriler (PostgreSQL).</summary>
 public interface IQuestionService
 {
