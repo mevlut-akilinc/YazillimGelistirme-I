@@ -35,7 +35,11 @@ public static class Grader
 
     public static GradeResult Grade(Exam exam, IReadOnlyList<StudentAnswer> answers)
     {
-        var byQuestion = answers.ToDictionary(a => a.QuestionId);
+        // Cevaplar ağdan geldiği için aynı soruya birden fazla kayıt olabilir; sonuncusu geçerli sayılır.
+        // (ToDictionary bu durumda ArgumentException fırlatırdı.)
+        var byQuestion = answers
+            .GroupBy(a => a.QuestionId)
+            .ToDictionary(g => g.Key, g => g.Last());
         var details = new List<QuestionGrade>();
 
         foreach (var eq in exam.Questions.OrderBy(q => q.Order))
