@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Windows;
+using Npgsql;
 using SinavSistemi.Egitmen.Grading;
 using SinavSistemi.Shared.Models;
 using SinavSistemi.Shared.Protocol;
@@ -294,6 +295,13 @@ public sealed class TcpExamServer : IExamServer
 
     public async Task BroadcastExamAsync(Exam exam)
     {
+        // Veritabanı işleri önce: biri başarısız olursa sınav hiç dağıtılmamış olur (yarım durum kalmaz).
+        // Daha önce teslim etmiş olanlar (ör. Egitmen.exe yeniden başlatıldıysa) DB'den alınır;
+        // böylece login kontrolü onları da "zaten teslim ettiniz" ile reddeder.
+        var submittedBefore = await _exams.GetSubmittedStudentNumbersAsync(exam.Id);
+        // LiveExamViewModel, Status = Yayinda ve StartedAt'i bu çağrıdan önce set ediyor
+        await _exams.UpdateStatusAsync(exam.Id, ExamStatus.Yayinda, exam.StartedAt);
+
         Exam copy;
         lock (_examLock)
         {
@@ -301,9 +309,18 @@ public sealed class TcpExamServer : IExamServer
             _studentCopy = copy = Protocol.StripForStudent(exam);
             _endedAt = null;
             _submitted.Clear();
+            _submitted.UnionWith(submittedBefore);
         }
 
-        var targets = _online.Values.Where(c => c.IsReady).ToList();
+        // Bağlı olup bu sınavı zaten teslim etmiş öğrenciye sınav gönderilmez (teslimi nasılsa reddedilirdi)
+        var online = _online.Values.Where(c => c.IsReady).ToList();
+        var targets = online.Where(c => !submittedBefore.Contains(c.Number)).ToList();
+        foreach (var c in online.Except(targets))
+        {
+            Ui(() => { c.Row.State = ClientState.TeslimEtti; StudentChanged?.Invoke(this, c.Row); });
+            Log(LogLevel.Uyari, c.Ip, $"{c.Number} bu sınavı daha önce teslim etmiş, sınav gönderilmedi");
+        }
+
         await Task.WhenAll(targets.Select(c => SendExamAsync(c, copy, exam.EndsAt)));
         Log(LogLevel.Bilgi, "Sunucu", $"\"{exam.Title}\" {targets.Count} öğrenciye gönderildi ({exam.DurationMinutes} dk)");
     }
@@ -320,6 +337,17 @@ public sealed class TcpExamServer : IExamServer
         await Task.WhenAll(_online.Values.Where(c => c.IsReady).ToList().Select(c => SafeSendAsync(c, MessageType.ExamEnded)));
         Log(LogLevel.Uyari, "Sunucu",
             $"Sınav sonlandırıldı. Açık cevaplar {Protocol.SubmitGracePeriod.TotalSeconds:0} sn içinde toplanıyor, sonra gönderim kabul edilmeyecek");
+
+        // Durumu kalıcı yaz. startedAt = null → başlama zamanı korunur (UPDATE'te COALESCE).
+        // Öğrencilere ExamEnded'dan SONRA: DB hatası sınavın bitmesini engellemesin.
+        try
+        {
+            await _exams.UpdateStatusAsync(examId, ExamStatus.Bitti, null);
+        }
+        catch (Exception ex)
+        {
+            Log(LogLevel.Hata, "Sunucu", $"Sınav durumu 'Bitti' olarak kaydedilemedi: {ex.Message}");
+        }
     }
 
     private async Task SendExamAsync(ClientConnection conn, Exam copy, DateTime? endsAt)
@@ -373,7 +401,7 @@ public sealed class TcpExamServer : IExamServer
             {
                 ExamId = exam.Id,
                 Student = conn.User,
-                Answers = payload.Answers ?? new List<StudentAnswer>(),
+                Answers = BuildGradedAnswers(exam, payload.Answers, grade),
                 SubmittedAt = now,
                 IpAddress = conn.Ip,
                 EarnedPoints = grade.EarnedPoints,
@@ -389,6 +417,15 @@ public sealed class TcpExamServer : IExamServer
             Log(LogLevel.Bilgi, conn.Ip,
                 $"{conn.Number} sınavı teslim etti — {grade.CorrectCount}/{grade.GradedCount} doğru, puan {grade.Percentage:0.0}");
         }
+        catch (PostgresException pex) when (pex.SqlState == PostgresErrorCodes.UniqueViolation
+                                            && pex.ConstraintName == "uq_submissions_exam_student")
+        {
+            // Veritabanında bu sınava ait teslim zaten var (ör. sunucu yeniden başlatıldı).
+            // _submitted'dan ÇIKARILMAZ: öğrenci tekrar denememeli.
+            const string reason = "Bu sınavı zaten teslim ettiniz.";
+            await SafeSendAsync(conn, MessageType.SubmitRejected, new SubmitResultPayload(false, reason, now));
+            Log(LogLevel.Uyari, conn.Ip, $"{conn.Number} gönderimi reddedildi: {reason}");
+        }
         catch (Exception ex)
         {
             // Kayıt başarısızsa öğrenci tekrar gönderebilsin
@@ -397,6 +434,40 @@ public sealed class TcpExamServer : IExamServer
                 new SubmitResultPayload(false, "Sunucu cevabı kaydedemedi, tekrar deneyin.", now));
             Log(LogLevel.Hata, "Sunucu", $"{conn.Number} teslimi kaydedilemedi: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Kaydedilecek cevap listesini sınavın GERÇEK sorularından (grade.Details) üretir, istemcinin listesinden değil:
+    ///  - Sınavın her sorusu için tam bir satır olur; cevaplanmamış soru da yazılır (is_correct = false, puan 0),
+    ///    böylece raporda her soru görünür.
+    ///  - Sınavda olmayan soru id'leri yok sayılır; aynı soruya birden fazla cevap geldiyse Grader gibi sonuncusu alınır.
+    ///  - Seçilen şık o soruya ait değilse NULL yazılır (FK hatası tüm teslimi düşürmesin).
+    ///  - IsCorrect / EarnedPoints / IsPending her zaman Grader sonucundan gelir (istemciden gelene güvenilmez).
+    /// </summary>
+    private static List<StudentAnswer> BuildGradedAnswers(Exam exam, List<StudentAnswer>? given, GradeResult grade)
+    {
+        var byQuestion = (given ?? new List<StudentAnswer>())
+            .GroupBy(a => a.QuestionId)
+            .ToDictionary(g => g.Key, g => g.Last());
+        var questions = exam.Questions.ToDictionary(eq => eq.Question.Id, eq => eq.Question);
+
+        return grade.Details.Select(d =>
+        {
+            byQuestion.TryGetValue(d.QuestionId, out var a);
+            int? option = a?.SelectedOptionId is int id && questions[d.QuestionId].Options.Any(o => o.Id == id) ? id : null;
+
+            return new StudentAnswer
+            {
+                QuestionId = d.QuestionId,
+                SelectedOptionId = option,
+                Text = a?.Text,
+                Code = a?.Code,
+                // Kodlama (final): henüz puanlanmadı → doğru/yanlış ve puan boş
+                IsCorrect = d.IsPending ? null : d.IsCorrect,
+                EarnedPoints = d.IsPending ? null : d.EarnedPoints,
+                IsPending = d.IsPending
+            };
+        }).ToList();
     }
 
     /// <summary>Teslim kabul edilebilir mi? Edilemiyorsa sebebini döndürür. _examLock altında çağrılmalı.</summary>
@@ -433,10 +504,31 @@ public sealed class TcpExamServer : IExamServer
         }
     }
 
+    /// <summary>Tek log noktası: arayüze (LogWritten) + kalıcı kayda (veritabanı ve log dosyası).</summary>
     private void Log(LogLevel level, string source, string message)
     {
         var entry = new LogEntry { Time = DateTime.Now, Level = level, Source = source, Message = message };
         Ui(() => LogWritten?.Invoke(this, entry));
+
+        int? examId;
+        lock (_examLock) examId = _activeExam?.Id;   // aktif sınav yoksa NULL
+        _ = PersistLogAsync(entry, examId);           // fire-and-forget: sunucu log yazımını beklemez
+    }
+
+    /// <summary>
+    /// Hata olursa sadece Debug çıktısına yazar. Burada tekrar Log() ÇAĞRILMAZ:
+    /// veritabanı kapalıyken her log yeni bir hata logu üretip sonsuz döngüye girerdi.
+    /// </summary>
+    private async Task PersistLogAsync(LogEntry entry, int? examId)
+    {
+        try
+        {
+            await _exams.AddLogAsync(entry, examId);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Log kalıcı yazılamadı: {ex.Message}");
+        }
     }
 
     /// <summary>Arayüz thread'inde çalıştırır (sıra korunur). Test gibi WPF olmayan ortamda doğrudan çalıştırır.</summary>
