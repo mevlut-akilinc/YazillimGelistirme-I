@@ -417,16 +417,16 @@ code { font-family:var(--mono); font-size:13px }
 </textarea>
 </section>
 <section id="d3">
-<header><div><span class="file">03-er.mmd</span><h2>Veritabanı (ER) diyagramı</h2><p>PostgreSQL tablo önerisi. Model sınıflarıyla birebir uyumlu; ekip arkadaşınızın şemasıyla karşılaştırın.</p></div>
+<header><div><span class="file">03-er.mmd</span><h2>Veritabanı (ER) diyagramı</h2><p>PostgreSQL şeması (db/01_schema.sql ile birebir). Enum kolonları C# enum adlarını taşır.</p></div>
 <button type="button" class="copy" data-src="s3">Kaynağı kopyala</button></header>
 <div class="canvas"><pre class="mermaid">erDiagram
     USERS {
         int id PK
         varchar username UK
-        varchar password_hash
+        varchar password_hash &quot;BCrypt&quot;
         varchar full_name
-        varchar role &quot;EGITMEN | OGRENCI&quot;
-        varchar student_number UK
+        varchar role &quot;Egitmen | Ogrenci&quot;
+        varchar student_number UK &quot;Ogrenci ise zorunlu&quot;
         varchar class_name
         timestamp created_at
     }
@@ -437,20 +437,21 @@ code { font-family:var(--mono); font-size:13px }
     QUESTIONS {
         int id PK
         int category_id FK
-        varchar type &quot;COKTAN_SECMELI | KLASIK | KODLAMA&quot;
+        varchar type &quot;CoktanSecmeli | Klasik | Kodlama&quot;
         text body
-        int default_points
+        int default_points &quot;&gt; 0&quot;
         text expected_answer
-        varchar expected_time_complexity
-        varchar expected_space_complexity
         text starter_code
+        varchar expected_time_complexity &quot;O1 | OLogN | ON | ONLogN | ON2 | ON3 | O2N&quot;
+        varchar expected_space_complexity &quot;aynı değerler&quot;
         int created_by FK
         timestamp created_at
+        boolean is_deleted &quot;soft delete&quot;
     }
     QUESTION_OPTIONS {
         int id PK
         int question_id FK
-        char label
+        char label &quot;A-E, soru içinde UNIQUE (deferrable)&quot;
         text body
         boolean is_correct
     }
@@ -465,37 +466,42 @@ code { font-family:var(--mono); font-size:13px }
         int id PK
         varchar title
         varchar class_name
-        int duration_minutes
-        varchar status &quot;TASLAK | YAYINDA | BITTI&quot;
-        numeric test_case_weight
-        numeric complexity_weight
+        int duration_minutes &quot;&gt; 0&quot;
+        varchar status &quot;Taslak | Yayinda | Bitti&quot;
+        double test_case_weight &quot;toplam = 1&quot;
+        double complexity_weight
         timestamp started_at
         int created_by FK
+        timestamp created_at
     }
     EXAM_QUESTIONS {
         int exam_id PK, FK
         int question_id PK, FK
         int order_no
-        int points
+        int points &quot;&gt; 0&quot;
     }
     SUBMISSIONS {
         int id PK
-        int exam_id FK
+        int exam_id FK &quot;UNIQUE (exam_id, student_id)&quot;
         int student_id FK
         timestamp submitted_at
         varchar client_ip
-        numeric total_score
+        int earned_points
+        int max_points
         int correct_count
+        int graded_count
+        double score &quot;100 üzerinden&quot;
     }
     ANSWERS {
         int id PK
-        int submission_id FK
+        int submission_id FK &quot;UNIQUE (submission_id, question_id)&quot;
         int question_id FK
-        int selected_option_id FK
+        int selected_option_id FK &quot;nullable&quot;
         text answer_text
         text code
         boolean is_correct
-        numeric score
+        int earned_points
+        boolean is_pending &quot;kodlama: finalde&quot;
     }
     CODE_RESULTS {
         int answer_id PK, FK
@@ -508,35 +514,36 @@ code { font-family:var(--mono); font-size:13px }
     }
     LOGS {
         bigint id PK
-        int exam_id FK
+        int exam_id FK &quot;nullable&quot;
         timestamp created_at
-        varchar level
+        varchar level &quot;Bilgi | Uyari | Hata&quot;
         varchar source
         text message
     }
 
     CATEGORIES ||--o{ QUESTIONS : &quot;içerir&quot;
-    USERS ||--o{ QUESTIONS : &quot;oluşturur&quot;
+    USERS |o--o{ QUESTIONS : &quot;oluşturur&quot;
     QUESTIONS ||--o{ QUESTION_OPTIONS : &quot;şıkları&quot;
     QUESTIONS ||--o{ TEST_CASES : &quot;testleri&quot;
-    USERS ||--o{ EXAMS : &quot;hazırlar&quot;
-    EXAMS ||--|{ EXAM_QUESTIONS : &quot;içerir&quot;
+    USERS |o--o{ EXAMS : &quot;hazırlar&quot;
+    EXAMS ||--o{ EXAM_QUESTIONS : &quot;içerir&quot;
     QUESTIONS ||--o{ EXAM_QUESTIONS : &quot;kullanılır&quot;
     EXAMS ||--o{ SUBMISSIONS : &quot;alır&quot;
     USERS ||--o{ SUBMISSIONS : &quot;gönderir&quot;
-    SUBMISSIONS ||--|{ ANSWERS : &quot;içerir&quot;
+    SUBMISSIONS ||--o{ ANSWERS : &quot;içerir&quot;
     QUESTIONS ||--o{ ANSWERS : &quot;cevaplanır&quot;
+    QUESTION_OPTIONS |o--o{ ANSWERS : &quot;seçilir&quot;
     ANSWERS ||--o| CODE_RESULTS : &quot;kod sonucu&quot;
-    EXAMS ||--o{ LOGS : &quot;kayıt&quot;
+    EXAMS |o--o{ LOGS : &quot;kayıt&quot;
 </pre></div>
 <textarea id="s3" hidden readonly>erDiagram
     USERS {
         int id PK
         varchar username UK
-        varchar password_hash
+        varchar password_hash &quot;BCrypt&quot;
         varchar full_name
-        varchar role &quot;EGITMEN | OGRENCI&quot;
-        varchar student_number UK
+        varchar role &quot;Egitmen | Ogrenci&quot;
+        varchar student_number UK &quot;Ogrenci ise zorunlu&quot;
         varchar class_name
         timestamp created_at
     }
@@ -547,20 +554,21 @@ code { font-family:var(--mono); font-size:13px }
     QUESTIONS {
         int id PK
         int category_id FK
-        varchar type &quot;COKTAN_SECMELI | KLASIK | KODLAMA&quot;
+        varchar type &quot;CoktanSecmeli | Klasik | Kodlama&quot;
         text body
-        int default_points
+        int default_points &quot;&gt; 0&quot;
         text expected_answer
-        varchar expected_time_complexity
-        varchar expected_space_complexity
         text starter_code
+        varchar expected_time_complexity &quot;O1 | OLogN | ON | ONLogN | ON2 | ON3 | O2N&quot;
+        varchar expected_space_complexity &quot;aynı değerler&quot;
         int created_by FK
         timestamp created_at
+        boolean is_deleted &quot;soft delete&quot;
     }
     QUESTION_OPTIONS {
         int id PK
         int question_id FK
-        char label
+        char label &quot;A-E, soru içinde UNIQUE (deferrable)&quot;
         text body
         boolean is_correct
     }
@@ -575,37 +583,42 @@ code { font-family:var(--mono); font-size:13px }
         int id PK
         varchar title
         varchar class_name
-        int duration_minutes
-        varchar status &quot;TASLAK | YAYINDA | BITTI&quot;
-        numeric test_case_weight
-        numeric complexity_weight
+        int duration_minutes &quot;&gt; 0&quot;
+        varchar status &quot;Taslak | Yayinda | Bitti&quot;
+        double test_case_weight &quot;toplam = 1&quot;
+        double complexity_weight
         timestamp started_at
         int created_by FK
+        timestamp created_at
     }
     EXAM_QUESTIONS {
         int exam_id PK, FK
         int question_id PK, FK
         int order_no
-        int points
+        int points &quot;&gt; 0&quot;
     }
     SUBMISSIONS {
         int id PK
-        int exam_id FK
+        int exam_id FK &quot;UNIQUE (exam_id, student_id)&quot;
         int student_id FK
         timestamp submitted_at
         varchar client_ip
-        numeric total_score
+        int earned_points
+        int max_points
         int correct_count
+        int graded_count
+        double score &quot;100 üzerinden&quot;
     }
     ANSWERS {
         int id PK
-        int submission_id FK
+        int submission_id FK &quot;UNIQUE (submission_id, question_id)&quot;
         int question_id FK
-        int selected_option_id FK
+        int selected_option_id FK &quot;nullable&quot;
         text answer_text
         text code
         boolean is_correct
-        numeric score
+        int earned_points
+        boolean is_pending &quot;kodlama: finalde&quot;
     }
     CODE_RESULTS {
         int answer_id PK, FK
@@ -618,26 +631,27 @@ code { font-family:var(--mono); font-size:13px }
     }
     LOGS {
         bigint id PK
-        int exam_id FK
+        int exam_id FK &quot;nullable&quot;
         timestamp created_at
-        varchar level
+        varchar level &quot;Bilgi | Uyari | Hata&quot;
         varchar source
         text message
     }
 
     CATEGORIES ||--o{ QUESTIONS : &quot;içerir&quot;
-    USERS ||--o{ QUESTIONS : &quot;oluşturur&quot;
+    USERS |o--o{ QUESTIONS : &quot;oluşturur&quot;
     QUESTIONS ||--o{ QUESTION_OPTIONS : &quot;şıkları&quot;
     QUESTIONS ||--o{ TEST_CASES : &quot;testleri&quot;
-    USERS ||--o{ EXAMS : &quot;hazırlar&quot;
-    EXAMS ||--|{ EXAM_QUESTIONS : &quot;içerir&quot;
+    USERS |o--o{ EXAMS : &quot;hazırlar&quot;
+    EXAMS ||--o{ EXAM_QUESTIONS : &quot;içerir&quot;
     QUESTIONS ||--o{ EXAM_QUESTIONS : &quot;kullanılır&quot;
     EXAMS ||--o{ SUBMISSIONS : &quot;alır&quot;
     USERS ||--o{ SUBMISSIONS : &quot;gönderir&quot;
-    SUBMISSIONS ||--|{ ANSWERS : &quot;içerir&quot;
+    SUBMISSIONS ||--o{ ANSWERS : &quot;içerir&quot;
     QUESTIONS ||--o{ ANSWERS : &quot;cevaplanır&quot;
+    QUESTION_OPTIONS |o--o{ ANSWERS : &quot;seçilir&quot;
     ANSWERS ||--o| CODE_RESULTS : &quot;kod sonucu&quot;
-    EXAMS ||--o{ LOGS : &quot;kayıt&quot;
+    EXAMS |o--o{ LOGS : &quot;kayıt&quot;
 </textarea>
 </section>
 <section id="d4">

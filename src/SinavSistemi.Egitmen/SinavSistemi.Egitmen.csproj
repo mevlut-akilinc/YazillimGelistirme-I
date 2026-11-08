@@ -16,11 +16,19 @@
     <ProjectReference Include="..\SinavSistemi.Shared\SinavSistemi.Shared.csproj" />
   </ItemGroup>
 
-  <!-- PostgreSQL bağlanınca:
+  <!-- Veritabanı: PostgreSQL (Npgsql) + Dapper, şifre hash'i BCrypt, ayarlar appsettings.json -->
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="8.0.5" />
-    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
+    <PackageReference Include="Dapper" Version="2.1.89" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.14" />
+    <PackageReference Include="Npgsql" Version="10.0.3" />
   </ItemGroup>
-  -->
+
+  <!-- Ayar dosyaları exe'nin yanına kopyalanır. appsettings.Local.json yoksa bu satır bir şey yapmaz. -->
+  <ItemGroup>
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="appsettings.Local.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 
 </Project>

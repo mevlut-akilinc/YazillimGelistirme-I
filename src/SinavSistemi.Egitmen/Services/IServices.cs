@@ -3,7 +3,7 @@ using SinavSistemi.Shared.Models;
 namespace SinavSistemi.Egitmen.Services;
 
 // Egitmen.exe'nin servisleri. Arayüz sadece bu interface'leri bilir;
-// gerçek implementasyonlar hazır olunca ServiceLocator'daki Mock satırları değiştirilir.
+// hangi implementasyonun (Pg* veya Mock*) kullanılacağını ServiceLocator.Initialize, appsettings.json'daki UseDatabase'e göre seçer.
 
 /// <summary>
 /// Eğitmen girişi. Veritabanı aynı bilgisayarda olduğu için doğrudan PostgreSQL'e sorar (ağ yok).
@@ -45,6 +45,18 @@ public interface IExamService
     Task SaveSubmissionAsync(Submission submission);
     Task<IReadOnlyList<ResultRow>> GetResultsAsync(int examId);
     Task<IReadOnlyList<LogEntry>> GetLogsAsync(int? examId = null);
+
+    /// <summary>
+    /// Sadece durum ve başlama zamanını günceller (sınavın sorularına dokunmaz).
+    /// startedAt null ise mevcut değer korunur (sınav bitirilirken başlama zamanı silinmesin).
+    /// </summary>
+    Task UpdateStatusAsync(int examId, ExamStatus status, DateTime? startedAt);
+
+    /// <summary>Logu kalıcı yazar (veritabanı + günlük log dosyası). Sunucu thread'lerinden aynı anda çağrılabilir.</summary>
+    Task AddLogAsync(LogEntry entry, int? examId);
+
+    /// <summary>Bu sınavı teslim etmiş öğrenci numaraları (sunucu yeniden başlatılınca çift teslimi engellemek için).</summary>
+    Task<IReadOnlyCollection<string>> GetSubmittedStudentNumbersAsync(int examId);
 }
 
 /// <summary>

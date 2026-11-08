@@ -30,7 +30,9 @@ public record ChoiceItem<T>(T Value, string Text);
 /// <summary>Soru ekle / düzenle penceresi.</summary>
 public class QuestionEditorViewModel : ObservableObject
 {
-    private static readonly string[] Labels = { "A", "B", "C", "D", "E", "F" };
+    // En fazla 5 şık: veritabanındaki question_options.label CHECK kısıtı ('A'..'E') ile aynı olmalı.
+    // "Şık ekle" butonu Options.Count < Labels.Length olduğu sürece aktiftir.
+    private static readonly string[] Labels = { "A", "B", "C", "D", "E" };
 
     private readonly int _id;
     private QuestionType _type = QuestionType.CoktanSecmeli;

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace SinavSistemi.Shared.Models;
 
 public enum ExamStatus
@@ -38,6 +40,15 @@ public class StudentAnswer
     public int? SelectedOptionId { get; set; }  // çoktan seçmeli
     public string? Text { get; set; }           // klasik
     public string? Code { get; set; }           // kodlama
+
+    // ---- Soru bazlı puanlama sonucu (answers tablosuna yazılır)
+    // [JsonIgnore]: ağ protokolünde TAŞINMAZ. Öğrenci bu alanları gönderse bile okunmaz;
+    // sunucu her zaman Grader sonucundan doldurur.
+
+    [JsonIgnore] public bool? IsCorrect { get; set; }
+    [JsonIgnore] public int? EarnedPoints { get; set; }
+    /// <summary>Kodlama sorusu: finalde puanlanacak.</summary>
+    [JsonIgnore] public bool IsPending { get; set; }
 }
 
 public class Submission

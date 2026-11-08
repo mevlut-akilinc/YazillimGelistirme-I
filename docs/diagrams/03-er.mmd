@@ -2,10 +2,10 @@ erDiagram
     USERS {
         int id PK
         varchar username UK
-        varchar password_hash
+        varchar password_hash "BCrypt"
         varchar full_name
-        varchar role "EGITMEN | OGRENCI"
-        varchar student_number UK
+        varchar role "Egitmen | Ogrenci"
+        varchar student_number UK "Ogrenci ise zorunlu"
         varchar class_name
         timestamp created_at
     }
@@ -16,20 +16,21 @@ erDiagram
     QUESTIONS {
         int id PK
         int category_id FK
-        varchar type "COKTAN_SECMELI | KLASIK | KODLAMA"
+        varchar type "CoktanSecmeli | Klasik | Kodlama"
         text body
-        int default_points
+        int default_points "> 0"
         text expected_answer
-        varchar expected_time_complexity
-        varchar expected_space_complexity
         text starter_code
+        varchar expected_time_complexity "O1 | OLogN | ON | ONLogN | ON2 | ON3 | O2N"
+        varchar expected_space_complexity "aynı değerler"
         int created_by FK
         timestamp created_at
+        boolean is_deleted "soft delete"
     }
     QUESTION_OPTIONS {
         int id PK
         int question_id FK
-        char label
+        char label "A-E, soru içinde UNIQUE (deferrable)"
         text body
         boolean is_correct
     }
@@ -44,37 +45,42 @@ erDiagram
         int id PK
         varchar title
         varchar class_name
-        int duration_minutes
-        varchar status "TASLAK | YAYINDA | BITTI"
-        numeric test_case_weight
-        numeric complexity_weight
+        int duration_minutes "> 0"
+        varchar status "Taslak | Yayinda | Bitti"
+        double test_case_weight "toplam = 1"
+        double complexity_weight
         timestamp started_at
         int created_by FK
+        timestamp created_at
     }
     EXAM_QUESTIONS {
         int exam_id PK, FK
         int question_id PK, FK
         int order_no
-        int points
+        int points "> 0"
     }
     SUBMISSIONS {
         int id PK
-        int exam_id FK
+        int exam_id FK "UNIQUE (exam_id, student_id)"
         int student_id FK
         timestamp submitted_at
         varchar client_ip
-        numeric total_score
+        int earned_points
+        int max_points
         int correct_count
+        int graded_count
+        double score "100 üzerinden"
     }
     ANSWERS {
         int id PK
-        int submission_id FK
+        int submission_id FK "UNIQUE (submission_id, question_id)"
         int question_id FK
-        int selected_option_id FK
+        int selected_option_id FK "nullable"
         text answer_text
         text code
         boolean is_correct
-        numeric score
+        int earned_points
+        boolean is_pending "kodlama: finalde"
     }
     CODE_RESULTS {
         int answer_id PK, FK
@@ -87,23 +93,24 @@ erDiagram
     }
     LOGS {
         bigint id PK
-        int exam_id FK
+        int exam_id FK "nullable"
         timestamp created_at
-        varchar level
+        varchar level "Bilgi | Uyari | Hata"
         varchar source
         text message
     }
 
     CATEGORIES ||--o{ QUESTIONS : "içerir"
-    USERS ||--o{ QUESTIONS : "oluşturur"
+    USERS |o--o{ QUESTIONS : "oluşturur"
     QUESTIONS ||--o{ QUESTION_OPTIONS : "şıkları"
     QUESTIONS ||--o{ TEST_CASES : "testleri"
-    USERS ||--o{ EXAMS : "hazırlar"
-    EXAMS ||--|{ EXAM_QUESTIONS : "içerir"
+    USERS |o--o{ EXAMS : "hazırlar"
+    EXAMS ||--o{ EXAM_QUESTIONS : "içerir"
     QUESTIONS ||--o{ EXAM_QUESTIONS : "kullanılır"
     EXAMS ||--o{ SUBMISSIONS : "alır"
     USERS ||--o{ SUBMISSIONS : "gönderir"
-    SUBMISSIONS ||--|{ ANSWERS : "içerir"
+    SUBMISSIONS ||--o{ ANSWERS : "içerir"
     QUESTIONS ||--o{ ANSWERS : "cevaplanır"
+    QUESTION_OPTIONS |o--o{ ANSWERS : "seçilir"
     ANSWERS ||--o| CODE_RESULTS : "kod sonucu"
-    EXAMS ||--o{ LOGS : "kayıt"
+    EXAMS |o--o{ LOGS : "kayıt"
