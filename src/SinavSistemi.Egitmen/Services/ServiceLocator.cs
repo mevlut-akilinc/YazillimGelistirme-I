@@ -31,10 +31,11 @@ public static class ServiceLocator
         if (useDb && Db.DataSource is null)
             throw new InvalidOperationException("UseDatabase=true ama veritabanı bağlantısı kurulmadı (Db.ConnectAsync).");
 
-        // Pg* servisleri yazıldıkça her satır şu kalıba dönüşecek:
-        //   Auth = useDb ? new PgAuthService(Db.DataSource!) : new MockAuthService();
-        Auth = new MockAuthService();
-        StudentAuth = new MockStudentAuthenticator();
+        var ds = Db.DataSource!;   // yalnızca useDb ise kullanılır
+
+        Auth = useDb ? new PgAuthService(ds) : new MockAuthService();
+        StudentAuth = useDb ? new PgStudentAuthenticator(ds) : new MockStudentAuthenticator();
+        // Faz 4–5: aşağıdakiler de aynı kalıba dönüşecek
         Questions = new MockQuestionService();
         Exams = new MockExamService();
 
