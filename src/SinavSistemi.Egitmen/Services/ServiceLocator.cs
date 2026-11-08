@@ -35,8 +35,8 @@ public static class ServiceLocator
 
         Auth = useDb ? new PgAuthService(ds) : new MockAuthService();
         StudentAuth = useDb ? new PgStudentAuthenticator(ds) : new MockStudentAuthenticator();
-        // Faz 4–5: aşağıdakiler de aynı kalıba dönüşecek
-        Questions = new MockQuestionService();
+        Questions = useDb ? new PgQuestionService(ds, Auth) : new MockQuestionService();
+        // Faz 5: Exams de aynı kalıba dönüşecek
         Exams = new MockExamService();
 
         Server = new TcpExamServer(StudentAuth, Exams);
