@@ -3,7 +3,7 @@ using SinavSistemi.Shared.Models;
 namespace SinavSistemi.Egitmen.Services;
 
 // Egitmen.exe'nin servisleri. Arayüz sadece bu interface'leri bilir;
-// gerçek implementasyonlar hazır olunca ServiceLocator'daki Mock satırları değiştirilir.
+// hangi implementasyonun (Pg* veya Mock*) kullanılacağını ServiceLocator.Initialize, appsettings.json'daki UseDatabase'e göre seçer.
 
 /// <summary>
 /// Eğitmen girişi. Veritabanı aynı bilgisayarda olduğu için doğrudan PostgreSQL'e sorar (ağ yok).

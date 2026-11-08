@@ -2,7 +2,10 @@ using SinavSistemi.Shared.Models;
 
 namespace SinavSistemi.Shared.Mock;
 
-/// <summary>Arayüzü backend olmadan çalıştırmak için örnek veriler.</summary>
+/// <summary>
+/// Arayüzü veritabanı olmadan (UseDatabase=false) çalıştırmak için örnek veriler.
+/// Veritabanındaki karşılığı db/02_seed.sql; birini değiştirirseniz diğerini de güncelleyin.
+/// </summary>
 public static class MockData
 {
     public static readonly List<Question> Questions = new()
