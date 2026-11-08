@@ -134,6 +134,32 @@ internal class MockExamService : IExamService
         return Task.FromResult<IReadOnlyList<ResultRow>>(rows);
     }
 
+    public Task UpdateStatusAsync(int examId, ExamStatus status, DateTime? startedAt)
+    {
+        var exam = _exams.FirstOrDefault(e => e.Id == examId);
+        if (exam is not null)
+        {
+            exam.Status = status;
+            if (startedAt is not null) exam.StartedAt = startedAt;
+        }
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Mock: log dosyası/veritabanı yok; canlı loglar zaten LogWritten olayıyla ekrana düşüyor.</summary>
+    public Task AddLogAsync(LogEntry entry, int? examId) => Task.CompletedTask;
+
+    public Task<IReadOnlyCollection<string>> GetSubmittedStudentNumbersAsync(int examId)
+    {
+        lock (_submissions)
+        {
+            IReadOnlyCollection<string> numbers = _submissions
+                .Where(s => s.ExamId == examId)
+                .Select(s => s.Student.StudentNumber ?? s.Student.Username)
+                .ToList();
+            return Task.FromResult(numbers);
+        }
+    }
+
     public Task<IReadOnlyList<LogEntry>> GetLogsAsync(int? examId = null)
     {
         var now = DateTime.Now;
