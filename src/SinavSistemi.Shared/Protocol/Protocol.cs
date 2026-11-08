@@ -12,7 +12,7 @@ namespace SinavSistemi.Shared.Protocol;
 //  Öğrenci → Sunucu            Sunucu → Öğrenci
 //  ---------------------       ----------------------------
 //  Login                       LoginOk / LoginFail
-//                              Exam            (dağıtım anında, herkese)
+//                              Exam            (dağıtım anında herkese; sınav sürerken girene de)
 //  Progress                    —
 //  Submit                      SubmitOk / SubmitRejected
 //                              ExamEnded       (eğitmen bitirdi / süre doldu)
@@ -41,6 +41,11 @@ public class Envelope
 public record LoginRequest(string StudentNumber, string Password);
 public record LoginOkPayload(string Token, string FullName, string? ClassName);
 public record LoginFailPayload(string Reason);
+/// <summary>
+/// Sınav + kalan süre. Öğrenci kalan süreyi kendi saatinden değil bu değerden hesaplar;
+/// böylece iki bilgisayarın saati farklı olsa da süre herkes için aynı biter.
+/// </summary>
+public record ExamPayload(Exam Exam, int RemainingSeconds);
 public record ProgressPayload(int ExamId, int AnsweredCount);
 public record SubmitPayload(int ExamId, List<StudentAnswer> Answers);
 public record SubmitResultPayload(bool Accepted, string? Reason, DateTime ServerTime);
@@ -48,6 +53,12 @@ public record SubmitResultPayload(bool Accepted, string? Reason, DateTime Server
 public static class Protocol
 {
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
+    /// <summary>
+    /// Süre dolduktan / eğitmen bitirdikten sonra teslimlerin kabul edildiği ek süre.
+    /// Süre dolunca öğrenci ekranı cevapları otomatik gönderir; bu gönderimin ağdan gelmesi için pay bırakılır.
+    /// </summary>
+    public static readonly TimeSpan SubmitGracePeriod = TimeSpan.FromSeconds(15);
 
     public static string Serialize(MessageType type, object? payload = null, string? token = null)
     {
